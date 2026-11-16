@@ -67,10 +67,16 @@ def main():
                 a = hist.setdefault(cnpj, {})
                 if ref not in a or ver >= a[ref][0]:
                     a[ref] = (ver, num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield")))
+            if d.get("compl"):
+                ST["colunas"] = list(d["compl"][0].keys())
             ST["cvm%d" % ano] = "ok"
         except Exception as e:
             ST["cvm%d" % ano] = "erro: %s" % e
     # 3) Indicadores por fundo
+    vals = sorted(v[2] for m in hist.values() for v in m.values() if v[2] is not None)
+    esc = 100 if vals and vals[len(vals) // 2] < 0.05 else 1
+    ST["dy_escala"] = esc
+    ST["dy_mes_mediana"] = vals[len(vals) // 2] if vals else None
     F = {}
     for cnpj, meses in hist.items():
         t = tick.get(cnpj)
@@ -81,17 +87,38 @@ def main():
         dys = [meses[r][2] for r in refs if meses[r][2] is not None]
         sess = sorted(C[t])[-20:]
         preco = sess[-1][1]
-        if not vp or preco <= 0 or len(sess) < 10 or len(dys) < 6:
+        if not vp or preco <= 0 or len(sess) < 10:
             continue
-        dy = sum(dys) * 12 / len(dys) / 100 * vp / preco * 100
+        dy = None
+        if len(dys) >= 6:
+            dy = sum(dys) * esc * 12 / len(dys) / 100 * vp / preco * 100
+            dy = round(dy, 1) if 0 <= dy < 40 else None
         pvp = preco / vp
-        if 0.2 < pvp < 3 and 0 <= dy < 40:
-            F[t] = {"preco": round(preco, 2), "pvp": round(pvp, 2), "dy": round(dy, 1),
+        if 0.2 < pvp < 3:
+            F[t] = {"preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
                     "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1]}
+    # Diagnostico dos fundos que voce pediu para investigar
+    rev = {v: k for k, v in tick.items()}
+    diag = {}
+    for t in ("AAZQ11", "AGRX11", "CPTR11", "FGAA11"):
+        if t in F:
+            diag[t] = "ok " + json.dumps(F[t])
+        elif t not in C:
+            diag[t] = "sem cotacao na B3"
+        elif t not in rev:
+            diag[t] = "sem ISIN/ticker na CVM"
+        elif rev[t] not in hist:
+            diag[t] = "sem historico mensal na CVM"
+        else:
+            m = hist[rev[t]]
+            u = sorted(m)[-1]
+            diag[t] = "meses=%d vp=%s dys=%d ultimo=%s" % (len(m), m[u][1], len([1 for r in m if m[r][2] is not None]), u)
+    ST["diag"] = diag
     ST["fundos"] = len(F)
+    ST["com_dy"] = len([1 for f in F.values() if f["dy"] is not None])
     if F:  # so sobrescreve se deu certo
         json.dump({"atualizado": HOJE.isoformat(), "status": ST, "fundos": F},
-                  open("data/mercado.json", "w"), ensure_ascii=False)
+                  open("data/mercado.json", "w"), ensure_ascii=False, indent=1)
     print(ST)
 
 main()
