@@ -10,10 +10,10 @@ body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,Segoe
 .w{max-width:760px;margin:0 auto;padding:14px}
 header{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin:6px 0 14px}
 h1{margin:0;font-size:1.7rem;color:var(--pr)}header span{color:var(--mu);font-size:.95rem}
-h2{font-size:1.15rem;margin:0 0 10px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px}
+h2{font-size:1.1rem;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:10px}
 .g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.m{background:var(--pr2);border-radius:10px;padding:10px}.m b{display:block;font-size:1.25rem}.m small{color:var(--mu)}
+.m{background:var(--pr2);border-radius:10px;padding:10px}.m b{display:block;font-size:1.25rem}.g3{display:grid;grid-template-columns:1.9fr 1fr 1fr;gap:8px}.g3b{grid-template-columns:1fr 1fr .8fr}.g3 .m{padding:8px;min-width:0}.g3 .m b{font-size:clamp(.85rem,3.9vw,1.15rem);white-space:nowrap}.g3 .m small{display:block;font-size:.72rem;line-height:1.15}.g3 button{padding:6px 4px;font-size:.8rem}.m small{color:var(--mu)}
 .big{grid-column:1/-1}
 .bt{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 button,.btn{font:inherit;border:0;border-radius:12px;padding:14px 8px;background:var(--pr);color:#fff;font-weight:600;cursor:pointer}
@@ -31,7 +31,7 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <header><h1>Minha carteira</h1><span>By Rogério Moraes - investimentos</span></header>
 
 <div id="home" class="v on">
-<div class="card"><h2>Resumo da carteira</h2><div class="g" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g" id="dm"></div><button class="s" style="width:100%;margin-top:10px" onclick="go('dv')">📊 Mês anterior x mês atual</button></div><div id="al"></div>
+<div class="card"><h2>Resumo da carteira</h2><div class="g3" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g3 g3b" id="dm"></div></div><div id="al"></div>
 <div class="bt">
 <button onclick="go('bh')">📊 Buy and Hold</button>
 <button onclick="go('re')">💰 Reinvestir meus dividendos</button>
@@ -98,7 +98,7 @@ function home(){dyp();S.f=S.f||{ate:[],opp:0,rel:0};S.imp=S.imp||{p:null,d:null}
  var pat=0,q=0;S.a.forEach(function(x){pat+=x.q*pr(x);q+=x.q});
  var m12=0,tr=0,ul=0,pm=new Date(t.getFullYear(),t.getMonth()-1,1).toISOString().slice(0,7);
  S.d.forEach(function(d){if(d.dt>hj)tr+=d.v;else{if(d.dt>iso(a1))m12+=d.v;if(d.dt.slice(0,7)===pm)ul+=d.v}});
- $("res").innerHTML='<div class="m big"><small>Patrimônio</small><b>'+R(pat)+'</b></div><div class="m"><small>Quantidade de ativos</small><b>'+S.a.length+'</b></div><div class="m"><small>Total de cotas</small><b>'+q+'</b></div>';$("dm").innerHTML='<div class="m"><small>Média mensal (12 meses)</small><b>'+R(m12/12)+'</b></div><div class="m"><small>Dividendos do último mês</small><b>'+R(ul)+'</b></div>'}
+ $("res").innerHTML='<div class="m"><small>Patrimônio</small><b>'+R(pat)+'</b></div><div class="m"><small>Qtde ativos</small><b>'+S.a.length+'</b></div><div class="m"><small>Total de cotas</small><b>'+q+'</b></div>';$("dm").innerHTML='<div class="m"><small>Média mensal (12 meses)</small><b>'+R(m12/12)+'</b></div><div class="m"><small>Último mês</small><b>'+R(ul)+'</b></div><button class="s" onclick="go(\'dv\')">📊 Mês a mês</button>'}
 function sc(x){
  var s=0,nt=[],p=x.pvp,d=x.dy2!=null?x.dy2:x.dy,v=x.vac,l=x.liq;
  if(p==null){s+=15;nt.push("sem P/VP")}else if(p<0.8){s+=18;nt.push("P/VP muito baixo ("+p+"): investigue o motivo")}else if(p<=1){s+=30}else if(p<=1.05){s+=26}else if(p<=1.1){s+=16;nt.push("P/VP acima de 1,05")}else{s+=5;nt.push("caro: P/VP "+p)}
