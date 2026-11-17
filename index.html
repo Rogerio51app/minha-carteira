@@ -72,14 +72,14 @@ function R(v){return (v||0).toLocaleString("pt-BR",{style:"currency",currency:"B
 function pr(x){return x.price||x.pm||0}
 function go(i){document.querySelectorAll(".v").forEach(function(e){e.classList.remove("on")});$(i).classList.add("on");scrollTo(0,0);({home:home,bh:bh,op:op,ge:ge,rl:fRl,at:fAt,vz:function(){$("vf").innerHTML=""}}[i]||function(){})()}
 function iso(d){return d.toISOString().slice(0,10)}
-function home(){S.f=S.f||{ate:[],opp:0,rel:0};S.imp=S.imp||{p:null,d:null};alertas();dvs();
+function home(){dyp();S.f=S.f||{ate:[],opp:0,rel:0};S.imp=S.imp||{p:null,d:null};alertas();dvs();
  var t=new Date(),hj=iso(t),a1=new Date(t);a1.setFullYear(t.getFullYear()-1);
  var pat=0,q=0;S.a.forEach(function(x){pat+=x.q*pr(x);q+=x.q});
  var m12=0,tr=0,ul=0,pm=new Date(t.getFullYear(),t.getMonth()-1,1).toISOString().slice(0,7);
  S.d.forEach(function(d){if(d.dt>hj)tr+=d.v;else{if(d.dt>iso(a1))m12+=d.v;if(d.dt.slice(0,7)===pm)ul+=d.v}});
  $("res").innerHTML='<div class="m big"><small>Patrimônio</small><b>'+R(pat)+'</b></div><div class="m"><small>Quantidade de ativos</small><b>'+S.a.length+'</b></div><div class="m"><small>Total de cotas</small><b>'+q+'</b></div>';$("dm").innerHTML='<div class="m big"><small>Média mensal dos dividendos (12 meses)</small><b>'+R(m12/12)+'</b></div><div class="m"><small>Dividendos do último mês</small><b>'+R(ul)+'</b></div><div class="m"><small>Dividendos em trânsito</small><b>'+R(tr)+'</b></div>'}
 function sc(x){
- var s=0,nt=[],p=x.pvp,d=x.dy,v=x.vac,l=x.liq;
+ var s=0,nt=[],p=x.pvp,d=x.dy2!=null?x.dy2:x.dy,v=x.vac,l=x.liq;
  if(p==null){s+=15;nt.push("sem P/VP")}else if(p<0.8){s+=18;nt.push("P/VP muito baixo ("+p+"): investigue o motivo")}else if(p<=1){s+=30}else if(p<=1.05){s+=26}else if(p<=1.1){s+=16;nt.push("P/VP acima de 1,05")}else{s+=5;nt.push("caro: P/VP "+p)}
  if(d==null){s+=10;nt.push("sem DY")}else if(d>=12)s+=30;else if(d>=10)s+=25;else if(d>=8){s+=15;nt.push("DY moderado ("+d+"%)")}else{s+=5;nt.push("DY baixo ("+d+"%)")}
  if(v==null)s+=14;else if(v<=5)s+=20;else if(v<=10)s+=16;else if(v<=20){s+=8;nt.push("vacância "+v+"%")}else nt.push("vacância alta ("+v+"%)");
@@ -87,22 +87,22 @@ function sc(x){
  return{s:s,n:nt}}
 function tg(s){return '<span class="t '+(s>=75?"ok":s>=60?"wa":"ba")+'">'+s+'</span>'}
 function pesos(){var T=0;S.a.forEach(function(x){T+=x.q*pr(x)});return S.a.map(function(x){return T?x.q*pr(x)/T*100:0})}
-function bh(){
+function bh(){dyp();
  if(!S.a.length){$("bhr").innerHTML='<p class="mu">Cadastre seus ativos primeiro em “Meus ativos”.</p>';return}
  var w=pesos(),tot=0,al=[],med=0;
  S.a.forEach(function(x,i){var r=sc(x);med+=r.s*w[i]/100;if(r.s<60)al.push(x.t+": qualidade baixa");if(w[i]>15)al.push(x.t+": concentração de "+w[i].toFixed(1)+"% da carteira");r.n.forEach(function(t){if(r.s<75)al.push(x.t+": "+t)})});
  med=Math.round(med);var mx=Math.max.apply(null,w),div=S.a.length<8;
- var ok=med>=75&&mx<=15&&!div,md=med>=60;
+ var wt={};S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});Object.keys(wt).forEach(function(k){if(wt[k]>50)al.push(k+": "+wt[k].toFixed(0)+"% da carteira (sugerido at\u00e9 50%)")});var tpx=Object.keys(wt).some(function(k){return wt[k]>50}),ok=med>=75&&mx<=15&&!div&&!tpx,md=med>=60;
  var h='<div class="vd '+(ok?"ok":md?"wa":"ba")+'" style="color:#fff">'+(ok?"✅ Sua carteira tem qualidade":md?"⚠️ Boa, mas com pontos de atenção":"❌ Precisa de ajustes na composição")+' (nota '+med+'/100)</div>';
  if(div)h+='<p class="mu">Poucos ativos ('+S.a.length+'): busque diversificar (8 ou mais).</p>';
- S.a.forEach(function(x,i){var r=sc(x);h+='<div class="r"><div><b>'+x.t+'</b> <small class="mu">'+x.tp+' · '+w[i].toFixed(1)+'%'+(x.pm&&pr(x)?' \u00b7 '+((pr(x)/x.pm-1)*100).toFixed(1)+'% sobre o PM':'')+'</small><div class="bar"><i style="width:'+r.s+'%"></i></div></div>'+tg(r.s)+'</div>'});
+ S.a.forEach(function(x,i){var r=sc(x);h+='<div class="r"><div><b>'+x.t+'</b> <small class="mu">'+x.tp+' · '+w[i].toFixed(1)+'%'+(x.pm&&pr(x)?' \u00b7 '+((pr(x)/x.pm-1)*100).toFixed(1)+'% sobre o PM':'')+(dyv(x)!=null?' \u00b7 DY '+dyv(x).toFixed(1)+'%'+(x.dy2!=null?'*':''):'')+'</small><div class="bar"><i style="width:'+r.s+'%"></i></div></div>'+tg(r.s)+'</div>'});
  if(al.length)h+='<h2 style="margin-top:14px">Pontos de atenção</h2>'+al.slice(0,12).map(function(a){return '<div class="r">• '+a+'</div>'}).join("");
- h+='<p class="mu">Nota = P/VP (30) + DY 12m (30) + vacância (20) + liquidez (20). Critérios iniciais, ajustáveis.</p>';
+ h+='<p class="mu">* DY calculado pelos seus recebimentos (o dado da CVM estava ausente ou muito abaixo).</p><p class="mu">Nota = P/VP (30) + DY 12m (30) + vacância (20) + liquidez (20). Critérios iniciais, ajustáveis.</p>';
  $("bhr").innerHTML=h;ate(w);fresh()}
-function reinv(){
+function reinv(){dyp();
  var v=n($("vl").value);if(!v||!S.a.length){$("rer").innerHTML='<p class="mu">Informe um valor e tenha ativos cadastrados.</p>';return}
- var w=pesos(),ig=100/S.a.length;
- var L=S.a.map(function(x,i){var s=sc(x).s,r=s+(w[i]<ig?10:0)-(w[i]>15?20:0)-(x.pvp>1.1?15:0);return{x:x,s:s,r:r,w:w[i]}}).sort(function(a,b){return b.r-a.r}).slice(0,3);
+ var w=pesos(),ig=100/S.a.length,wt={};S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});
+ var L=S.a.map(function(x,i){var s=sc(x).s,r=s+(w[i]<ig?10:0)-(w[i]>15?20:0)-(x.pvp>1.1?15:0)-(wt[x.tp]>50?15:0);return{x:x,s:s,r:r,w:w[i]}}).sort(function(a,b){return b.r-a.r}).slice(0,3);
  var p=v/L.length,h='<p class="mu">Divisão sugerida entre os '+L.length+' melhores:</p>',sob=0;
  L.forEach(function(o,i){var pc=pr(o.x),q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;h+='<div class="r"><div><b>'+(i+1)+'º '+o.x.t+'</b><br><small class="mu">Nota '+o.s+' · peso atual '+o.w.toFixed(1)+'%</small></div><div style="text-align:right"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'});
  h+='<p class="mu">Sobra estimada: '+R(sob)+'. Prioriza nota alta, peso abaixo da média, sem passar de 15% e sem ágio alto.</p>';$("rer").innerHTML=h}
@@ -139,10 +139,21 @@ function cf(){var o=$("vo").value,t=$("vt").value.trim().toUpperCase(),q=n($("vq
  if(o=="compra"){if(x){x.pm=((x.q*x.pm)+(q*(p||x.pm)))/(x.q+q);x.q+=q}else S.a.push({t:t,tp:"FII",q:q,pm:p||0,price:p,pvp:null,dy:null,vac:null,liq:null})}
  else{if(!x){alert("Ativo não está na carteira");return}x.q-=q;if(x.q<=0)S.a.splice(S.a.indexOf(x),1)}
  sv();alert("Registrado!");go("home")}
-function dvs(){var t=new Date(),hj=iso(t),mc=hj.slice(0,7),dp=new Date(t.getFullYear(),t.getMonth()-1,1),mp=dp.toISOString().slice(0,7),NM=["janeiro","fevereiro","mar\u00e7o","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
- var L=function(m){return S.d.filter(function(d){return d.dt.slice(0,7)==m}).sort(function(a,b){return a.dt<b.dt?-1:1})};
- var col=function(ti,ls,vz,st){var tot=0,x='<div class="m"><small>'+ti+'</small>';ls.forEach(function(d){tot+=d.v;x+='<div class="r" style="padding:4px 0"><span>'+d.t+' <small class="mu">'+d.dt.slice(8)+'/'+d.dt.slice(5,7)+(st?(d.dt<=hj?' \u2705':' \ud83d\udd52'):'')+'</small></span><b>'+R(d.v)+'</b></div>'});return x+(ls.length?'<div class="r"><b>Total</b><b>'+R(tot)+'</b></div>':'<p class="mu">'+vz+'</p>')+'</div>'};
- $("dv2").innerHTML=col("Pagos em "+NM[dp.getMonth()],L(mp),"Sem registros. Importe o extrato do BTG com o per\u00edodo do m\u00eas passado.",0)+col("Agenda de "+NM[t.getMonth()],L(mc),"Sem registros. Importe os Proventos da B3 em Relat\u00f3rios.",1)}
+function dvs(){var t=new Date(),hj=iso(t),mc=hj.slice(0,7),dp=new Date(t.getFullYear(),t.getMonth()-1,1),mp=dp.toISOString().slice(0,7),NM=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],P={},A={},pd={};
+ S.d.forEach(function(d){var m=d.dt.slice(0,7);if(m==mp)P[d.t]=(P[d.t]||0)+d.v;else if(m==mc){A[d.t]=(A[d.t]||0)+d.v;if(d.dt>hj)pd[d.t]=1}});
+ var ks=Object.keys(P).concat(Object.keys(A)).concat(S.a.map(function(a){return a.t})).filter(function(k,i,r){return r.indexOf(k)==i}).sort(),
+ f=function(v){return v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})},
+ vr=function(p,a){if(a==null)return '<span class="mu">\u2014</span>';if(p==null)return '<span class="mu">novo</span>';var d=a-p;if(Math.abs(d)<0.005)return "=";return '<span style="color:var('+(d>0?"--ok":"--ba")+')">'+(d>0?"\u25b2 +":"\u25bc ")+(d/p*100).toFixed(0)+"%</span>"},
+ tp=0,ta=0,fa=0,x='<div class="m" style="grid-column:1/-1;overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.88rem"><tr class="mu" style="text-align:right"><th style="text-align:left">Ativo</th><th>'+NM[dp.getMonth()]+' (R$)</th><th>'+NM[t.getMonth()]+' (R$)</th><th>Varia\u00e7\u00e3o</th></tr>';
+ ks.forEach(function(k){var p=P[k],a=A[k];if(p!=null)tp+=p;if(a!=null)ta+=a;else if(p!=null)fa++;
+  x+='<tr style="border-top:1px solid var(--bd);text-align:right"><td style="text-align:left"><b>'+k+'</b></td><td>'+(p!=null?f(p):'<span class="mu">\u2014</span>')+'</td><td>'+(a!=null?f(a)+(pd[k]?" \ud83d\udd52":" \u2705"):'<span class="mu">\u2014</span>')+'</td><td>'+vr(p,a)+'</td></tr>'});
+ x+='<tr style="border-top:2px solid var(--bd);text-align:right"><td style="text-align:left"><b>Total</b></td><td><b>'+f(tp)+'</b></td><td><b>'+f(ta)+'</b></td><td></td></tr></table>'+(S.d.length?'<p class="mu" style="margin:8px 0 0">\u2705 pago \u00b7 \ud83d\udd52 a pagar \u00b7 "\u2014" ainda sem pagamento no m\u00eas. O m\u00eas atual est\u00e1 em andamento'+(fa?" ("+fa+" ativo(s) que pagaram no m\u00eas passado ainda n\u00e3o pagaram)":"")+'.</p>':'<p class="mu">Sem registros. Importe o extrato do BTG em Relat\u00f3rios.</p>')+'</div>';
+ $("dv2").innerHTML=x}
+function dyp(){var mc=iso(new Date()).slice(0,7),ms={},T={};
+ S.d.forEach(function(d){var m=d.dt.slice(0,7);if(m<mc){ms[m]=1;T[d.t]=(T[d.t]||0)+d.v}});
+ var n=Object.keys(ms).length;
+ S.a.forEach(function(x){x.dy2=null;var v=T[x.t],b=x.q*pr(x);if(n&&v&&b>0){var o=v/n*12/b*100;if(o<60&&(!x.dy||x.dy*2<o))x.dy2=o}})}
+function dyv(x){return x.dy2!=null?x.dy2:x.dy}
 function days(s){return s?Math.floor((Date.now()-new Date(s))/864e5):999}
 function fresh(){S.f.rel=days(S.imp.p)>7?1:0;sv()}
 function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{header:1}),mode=0,c={},P=[],k=0;
@@ -161,7 +172,7 @@ function ate(w){var a=[],V=["Confira o motivo no último relatório gerencial e 
  if(r.s<60){if(pj)a.push({t:"Manter "+x.t+" (n\u00e3o vender no preju\u00edzo)",y:"Nota "+r.s+" ("+r.n.join("; ")+"), mas a cota\u00e7\u00e3o ("+R(pr(x))+") est\u00e1 "+Math.abs(pl).toFixed(1)+"% abaixo do seu pre\u00e7o m\u00e9dio ("+R(x.pm)+"). Vender agora realizaria preju\u00edzo.",h:["N\u00e3o aporte mais nele por enquanto.","Acompanhe os fatos relevantes e os proventos dos pr\u00f3ximos meses.","Reavalie a venda quando a cota\u00e7\u00e3o voltar ao pre\u00e7o m\u00e9dio, ou se surgir problema estrutural (corte de proventos, inadimpl\u00eancia, vac\u00e2ncia subindo)."]});else a.push({t:"Avaliar a venda de "+x.t,y:"Nota "+r.s+". "+r.n.join("; ")+(pl!=null?" Resultado de "+pl.toFixed(1)+"% sobre o pre\u00e7o m\u00e9dio.":""),h:V})}
  if(w[i]>15)a.push({t:"Reduzir "+x.t,y:"Pesa "+w[i].toFixed(1)+"% da carteira (limite 15%)."+(pj?" Como est\u00e1 em preju\u00edzo, n\u00e3o venda: apenas n\u00e3o aporte mais.":" Se quiser, venda o excesso."),h:pj?["N\u00e3o aporte mais nele; direcione os pr\u00f3ximos aportes a outros ativos."]:V})});
  if(S.a.length<8)a.push({t:"Aumentar o número de ativos",y:"Você tem "+S.a.length+". Meta: 8 ou mais, misturando tijolo, papel e Fiagro.",h:["Abra Oportunidades e veja o ranking.","Compre aos poucos, com o dinheiro dos dividendos (use Reinvestir meus dividendos).","Compre pela plataforma do BTG com ordem limitada.","Registre por voz: comprei X cotas de CÓDIGO a PREÇO."]});
- S.f.ate=a;sv()}
+ var wt={};S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});Object.keys(wt).forEach(function(k){if(wt[k]>50)a.push({t:"Equilibrar a carteira: "+k+" = "+wt[k].toFixed(0)+"%",y:"Mais da metade do patrim\u00f4nio est\u00e1 em um s\u00f3 tipo de fundo (limite sugerido: 50%).",h:["N\u00e3o venda para equilibrar se estiver no preju\u00edzo.","Direcione os pr\u00f3ximos aportes e dividendos para o outro tipo (use Oportunidades).","Acompanhe o peso por tipo a cada Buy and Hold."]})});S.f.ate=a;sv()}
 function fAt(){$("atr").innerHTML=S.f.ate.length?S.f.ate.map(function(o){return '<div class="card"><h2>'+o.t+'</h2><p>'+o.y+'</p><ol>'+o.h.map(function(s){return '<li>'+s+'</li>'}).join("")+'</ol></div>'}).join(""):'<p class="mu">Nada a fazer agora. Rode o Buy and Hold para atualizar.</p>'}
 function cd(t,st,ls,u){return '<div class="card"><h2>'+t+' <span class="t '+(st?"ba":"ok")+'">'+(st?"Atualizar":"Em dia")+'</span></h2><p class="mu">Última importação: '+(u?u.split("-").reverse().join("/"):"nunca")+'</p><ol>'+ls.map(function(s){return '<li>'+s+'</li>'}).join("")+'</ol></div>'}
 function fRl(){$("rlr").innerHTML=cd("0. Extrato BTG (principal)",days(S.imp.p)>7,["Quando: toda semana e depois de cada compra ou venda.","Abra <a href='https://app.btgpactual.com/meu-perfil/documentos/extrato-de-investimentos' target='_blank'>BTG → Meu perfil → Documentos → Extrato de investimentos</a>, escolha o período (na primeira vez, o mais longo que o BTG permitir, de preferência 12 meses) e baixe em Excel.","Importe na caixa abaixo, sem escolher o tipo. O app lê Posição (quantidade, preço médio, cotação) e Rendimentos recebidos sozinho."],S.imp.p)+cd("1. Posição (B3), opcional",false,["Quando: uma vez por mês, no primeiro dia útil, e sempre depois de comprar ou vender.","Acesse b3.com.br e toque em Área do Investidor (canto superior direito). Entre com seu CPF.","No menu da esquerda, abra Extratos e escolha Posição.","Filtre por Renda Variável (fundos) e pela data mais recente. Toque em Filtrar.","No canto inferior direito, toque no ícone amarelo de download e escolha Excel.","Volte aqui e importe o arquivo na caixa abaixo (tipo: Posição)."],S.imp.p)+cd("2. Proventos futuros (B3), opcional",false,["Quando: uma vez por mês, a partir do dia 20 (sugestão minha, para a maioria dos fundos já ter pago).","Área do Investidor da B3 → menu Proventos (ou Extratos → Proventos em dinheiro). Se o nome do menu mudar, procure por Proventos.","Escolha o período dos últimos 12 meses e toque em Filtrar.","Baixe em Excel pelo ícone amarelo de download.","Importe abaixo (tipo: Proventos). Valores futuros entram como Dividendos em trânsito."],S.imp.d)+'<div class="card"><h2>3. Informe de rendimentos do BTG (opcional)</h2><p class="mu">A B3 já reúne todas as corretoras, então o BTG não é necessário todo mês. Use só para conferir seus números uma vez por ano.</p><ol><li>App BTG → Meu perfil → Documentos → Imposto de renda.</li><li>Na seção Informe de rendimentos, toque em Baixar. Fica disponível no início do ano.</li></ol></div><div class="card"><h2>Importar arquivo</h2><label>Tipo</label><select id="ft"><option value="p">Posição</option><option value="d">Proventos</option></select><label>Arquivo Excel baixado da B3</label><input id="fi" type="file" accept=".xlsx,.xls,.csv"><button style="width:100%;margin-top:10px" onclick="imp()">Importar</button><p id="fm" class="mu"></p></div>'}
