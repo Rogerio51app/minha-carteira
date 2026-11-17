@@ -2,6 +2,8 @@
 import io, re, csv, json, zipfile, datetime as dt, requests
 
 HOJE = dt.date.today()
+ISIN2T = {}
+MEUS = ["AAZQ11","AGRX11","CPTR11","FGAA11","GARE11","GGRC11","LIFE11","MANA11","MCRE11","RURA11","RZAG11","SNEL11","VGIA11","WHGR11","XPCA11"]
 ST = {}
 
 def baixar(url):
@@ -61,6 +63,8 @@ def fiagro():
                 isin = (col(r, "isin") or "").strip()
                 if isin.startswith("BR") and "CTF" in isin:
                     tk[cnpj] = isin[2:6] + "11"
+                if isin in ISIN2T:
+                    tk[cnpj] = ISIN2T[isin]
                 for k, v in r.items():
                     if v and re.fullmatch(r"[A-Z]{4}11", v.strip()) and any(x in k.lower() for x in ("negoc", "ticker", "codigo")):
                         tk[cnpj] = v.strip()
@@ -86,6 +90,7 @@ def cotacoes(ano):
             continue
         t = l[12:24].strip()
         if len(t) == 6 and t.endswith("11"):
+            ISIN2T[l[230:242].strip()] = t
             D.setdefault(t, []).append((l[2:10], int(l[108:121]) / 100, int(l[170:188]) / 100))
     return D
 
@@ -106,6 +111,8 @@ def main():
                 cnpj, isin = col(r, "cnpj"), (col(r, "isin") or "")
                 if cnpj and isin.startswith("BR") and "CTF" in isin:
                     tick[cnpj] = isin[2:6] + "11"
+                if isin in ISIN2T:
+                    tick[cnpj] = ISIN2T[isin]
             for r in d.get("compl", []):
                 cnpj, ref = col(r, "cnpj"), col(r, "data_ref")
                 ver = int(col(r, "versao") or 0)
@@ -167,9 +174,9 @@ def main():
             if 0.2 < pvp < 3:
                 F[t] = {"tp": "Agro" if cnpj in agro else "FII", "preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
                         "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1]}
-        if t in ("AAZQ11", "AGRX11", "CPTR11", "FGAA11"):
-            diag[t] = ("ok " + json.dumps(F[t])) if t in F else (motivo or "fora da faixa de P/VP")
-    for t in ("AAZQ11", "AGRX11", "CPTR11", "FGAA11"):
+        if t in MEUS:
+            diag[t] = ("ok " if t in F else (motivo or "fora da faixa de P/VP")) + " | ref=" + ref[:10] + " vp=" + str(vp) + " dy_mensal=" + str([round(d * esc, 3) for d in dys]) + (" | " + json.dumps(F[t]) if t in F else "")
+    for t in MEUS:
         if t not in diag:
             diag[t] = "sem cotacao na B3" if t not in C else "sem historico na CVM"
     ST["diag"] = diag
