@@ -31,7 +31,7 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <header><h1>Minha carteira</h1><span>By Rogério Moraes - investimentos</span></header>
 
 <div id="home" class="v on">
-<div class="card"><h2>Resumo da carteira</h2><div class="g" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g" id="dm"></div><div class="g" id="dv2" style="margin-top:10px"></div></div><div id="al"></div>
+<div class="card"><h2>Resumo da carteira</h2><div class="g" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g" id="dm"></div><button class="s" style="width:100%;margin-top:10px" onclick="go('dv')">\ud83d\udcca M\u00eas anterior x m\u00eas atual</button></div><div id="al"></div>
 <div class="bt">
 <button onclick="go('bh')">📊 Buy and Hold</button>
 <button onclick="go('re')">💰 Reinvestir meus dividendos</button>
@@ -53,11 +53,13 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <p class="mu">Toque e fale, por exemplo: “comprei 10 cotas de MXRF11 a 9,50”. Você confere e confirma antes de salvar.</p>
 <button style="width:100%" onclick="voz()">🎤 Falar agora</button><p id="vm" class="mu"></p><div id="vf"></div></div></div>
 
+<div id="dv" class="v"><button class="s" onclick="go('home')">\u2190 Voltar</button><div class="card" style="margin-top:12px"><h2>Dividendos: m\u00eas anterior x m\u00eas atual</h2><div class="g" id="dv2"></div></div></div>
 <div id="rl" class="v"><button class="s" onclick="go('home')">← Voltar</button><h2 style="margin-top:12px">📄 Relatórios que o app precisa</h2><div id="rlr"></div></div>
 <div id="at" class="v"><button class="s" onclick="go('home')">← Voltar</button><h2 style="margin-top:12px">⚠️ Atenção: o que fazer</h2><div id="atr"></div></div>
 <div id="ge" class="v"><button class="s" onclick="go('home')">← Voltar</button>
 <div class="card" style="margin-top:12px"><h2>Meus ativos</h2><div id="la"></div><h2 style="margin-top:16px" id="ta">Adicionar ativo</h2><div id="fa"></div></div>
 <div class="card"><h2>Proventos (dividendos)</h2><div id="ld"></div><div class="g"><div><label>Ativo</label><input id="dt" placeholder="MXRF11"></div><div><label>Valor total (R$)</label><input id="dv" inputmode="decimal"></div></div><label>Data de pagamento</label><input id="dd" type="date"><button style="width:100%;margin-top:10px" onclick="addD()">Salvar provento</button></div>
+<div class="card"><h2>Sincronizar notebook e celular</h2><p class="mu">Mant\u00e9m os dois aparelhos iguais, sozinho. Preencha uma vez em cada aparelho.</p><label>Reposit\u00f3rio privado (usuario/nome)</label><input id="syr" placeholder="Rogerio51app/carteira-dados"><label>Token do GitHub</label><input id="syt" type="password"><button style="width:100%;margin-top:10px" onclick="sy()">Salvar e sincronizar</button><p id="sy" class="mu"></p></div>
 <div class="card"><h2>Backup e troca de aparelho</h2><p class="mu">Seus dados ficam só neste aparelho. Para levar ao outro, copie o código abaixo e cole no outro, em “Restaurar”.</p>
 <button class="s" style="width:100%" onclick="bk()">Gerar código de backup</button><textarea id="bx" rows="3" style="margin-top:8px"></textarea><button class="s" style="width:100%;margin-top:8px" onclick="rs()">Restaurar a partir do código</button></div></div>
 </div>
@@ -65,19 +67,28 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <script>
 var K="mcart1",S={a:[],d:[],c:[]};
 try{var z=localStorage.getItem(K);if(z)S=JSON.parse(z)}catch(e){}
-function sv(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+var CF={},lj="",tm=null;try{CF=JSON.parse(localStorage.getItem("mcsync")||"{}")}catch(e){}
+function sj(){return JSON.stringify(S,function(k,v){return(k=="upd"||k=="f"||k=="c"||k=="cd"||k=="dy2"||k=="price")?undefined:v})}
+function sv(){var j=sj();if(j!=lj){lj=j;S.upd=new Date().toISOString();clearTimeout(tm);tm=setTimeout(push,2500)}try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+lj=sj();
+function gh(m,b){return fetch("https://api.github.com/repos/"+CF.rp+"/contents/carteira.json",{method:m,headers:{Authorization:"Bearer "+CF.tk,Accept:"application/vnd.github+json"},body:b?JSON.stringify(b):undefined})}
+function syst(t){var e=$("sy");if(e)e.textContent=t}
+function push(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){return r.status==404?null:r.json()}).then(function(g){if(!S.upd)S.upd=new Date().toISOString();var b={message:"sync",content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))};if(g&&g.sha)b.sha=g.sha;return gh("PUT",b)}).then(function(r){syst(r.ok?"Sincronizado \u00e0s "+new Date().toLocaleTimeString("pt-BR"):"Erro ao enviar ("+r.status+"). Confira o token e o reposit\u00f3rio.")}).catch(function(){syst("Sem conex\u00e3o para sincronizar.")})}
+function pull(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){if(r.status==404)return push();if(!r.ok){syst("Erro ao ler ("+r.status+"). Confira o token e o reposit\u00f3rio.");return}return r.json().then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));if((R.upd||"")>(S.upd||"")){S=R;lj=sj();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.")}else if((R.upd||"")<(S.upd||""))return push();else syst("Sincronizado.")})}).catch(function(){syst("Sem conex\u00e3o para sincronizar.")})}
+function sy(){CF={tk:$("syt").value.trim(),rp:$("syr").value.trim()};try{localStorage.setItem("mcsync",JSON.stringify(CF))}catch(e){}syst("Conectando...");pull()}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
 var $=function(i){return document.getElementById(i)};
 function n(v){v=String(v==null?"":v).replace(",",".");return v===""||isNaN(v)?null:parseFloat(v)}
 function R(v){return (v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
 function pr(x){return x.price||x.pm||0}
-function go(i){document.querySelectorAll(".v").forEach(function(e){e.classList.remove("on")});$(i).classList.add("on");scrollTo(0,0);({home:home,bh:bh,op:op,ge:ge,rl:fRl,at:fAt,vz:function(){$("vf").innerHTML=""}}[i]||function(){})()}
+function go(i){document.querySelectorAll(".v").forEach(function(e){e.classList.remove("on")});$(i).classList.add("on");scrollTo(0,0);({home:home,bh:bh,op:op,ge:ge,rl:fRl,at:fAt,dv:dvs,vz:function(){$("vf").innerHTML=""}}[i]||function(){})()}
 function iso(d){return d.toISOString().slice(0,10)}
-function home(){dyp();S.f=S.f||{ate:[],opp:0,rel:0};S.imp=S.imp||{p:null,d:null};alertas();dvs();
+function home(){dyp();S.f=S.f||{ate:[],opp:0,rel:0};S.imp=S.imp||{p:null,d:null};alertas();
  var t=new Date(),hj=iso(t),a1=new Date(t);a1.setFullYear(t.getFullYear()-1);
  var pat=0,q=0;S.a.forEach(function(x){pat+=x.q*pr(x);q+=x.q});
  var m12=0,tr=0,ul=0,pm=new Date(t.getFullYear(),t.getMonth()-1,1).toISOString().slice(0,7);
  S.d.forEach(function(d){if(d.dt>hj)tr+=d.v;else{if(d.dt>iso(a1))m12+=d.v;if(d.dt.slice(0,7)===pm)ul+=d.v}});
- $("res").innerHTML='<div class="m big"><small>Patrimônio</small><b>'+R(pat)+'</b></div><div class="m"><small>Quantidade de ativos</small><b>'+S.a.length+'</b></div><div class="m"><small>Total de cotas</small><b>'+q+'</b></div>';$("dm").innerHTML='<div class="m big"><small>Média mensal dos dividendos (12 meses)</small><b>'+R(m12/12)+'</b></div><div class="m"><small>Dividendos do último mês</small><b>'+R(ul)+'</b></div><div class="m"><small>Dividendos em trânsito</small><b>'+R(tr)+'</b></div>'}
+ $("res").innerHTML='<div class="m big"><small>Patrimônio</small><b>'+R(pat)+'</b></div><div class="m"><small>Quantidade de ativos</small><b>'+S.a.length+'</b></div><div class="m"><small>Total de cotas</small><b>'+q+'</b></div>';$("dm").innerHTML='<div class="m"><small>Média mensal (12 meses)</small><b>'+R(m12/12)+'</b></div><div class="m"><small>Dividendos do último mês</small><b>'+R(ul)+'</b></div>'}
 function sc(x){
  var s=0,nt=[],p=x.pvp,d=x.dy2!=null?x.dy2:x.dy,v=x.vac,l=x.liq;
  if(p==null){s+=15;nt.push("sem P/VP")}else if(p<0.8){s+=18;nt.push("P/VP muito baixo ("+p+"): investigue o motivo")}else if(p<=1){s+=30}else if(p<=1.05){s+=26}else if(p<=1.1){s+=16;nt.push("P/VP acima de 1,05")}else{s+=5;nt.push("caro: P/VP "+p)}
@@ -107,8 +118,9 @@ function reinv(){dyp();
  L.forEach(function(o,i){var pc=pr(o.x),q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;h+='<div class="r"><div><b>'+(i+1)+'º '+o.x.t+'</b><br><small class="mu">Nota '+o.s+' · peso atual '+o.w.toFixed(1)+'%</small></div><div style="text-align:right"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'});
  h+='<p class="mu">Sobra estimada: '+R(sob)+'. Prioriza nota alta, peso abaixo da média, sem passar de 15% e sem ágio alto.</p>';$("rer").innerHTML=h}
 function op(){
- var L=S.c.map(function(x,i){return{x:x,i:i,s:sc(x).s}}).sort(function(a,b){return b.s-a.s});
- $("opr").innerHTML=L.length?L.map(function(o,k){var own=S.a.some(function(a){return a.t===o.x.t});return '<div class="r"><div><b>'+(k+1)+'º '+o.x.t+'</b> '+(own?'<small class="mu">(já na carteira)</small>':'')+'<br><small class="mu">'+sc(o.x).n.join(" · ")+'</small></div><div>'+tg(o.s)+'<button class="d" onclick="S.c.splice('+o.i+',1);sv();op()">✕</button></div></div>'}).join("")+(L.length>=3?"":'<p class="mu">Adicione ao menos 3 fundos para ter o ranking.</p>'):'<p class="mu">Nenhum fundo passou nos filtros. '+(S.cd?'Base: '+S.cd.n+' fundos; com liquidez ok: '+S.cd.l+'; com DY: '+S.cd.d+'.':'Dados de mercado não carregados (confira data/mercado.json e recarregue com Ctrl+F5).')+'</p>';
+ dyp();var w=pesos(),wt={},md=0;S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i];md+=sc(x).s*w[i]/100});
+ var L=S.c.filter(function(x){return !S.a.length||sc(x).s>=md}).map(function(x){var s=sc(x).s,v=wt[x.tp]||0,aj=v>50?-12:(v<35?6:0);return{x:x,i:S.c.indexOf(x),s:s,r:s+aj,aj:aj}}).sort(function(a,b){return b.r-a.r});
+ $("opr").innerHTML=L.length?L.map(function(o,k){var own=S.a.some(function(a){return a.t===o.x.t});return '<div class="r"><div><b>'+(k+1)+'º '+o.x.t+'</b> '+(own?'<small class="mu">(já na carteira)</small>':'')+'<br><small class="mu">'+o.x.tp+' \u00b7 '+R(o.x.price)+(o.aj>0?' \u00b7 ajuda a equilibrar':o.aj<0?' \u00b7 '+o.x.tp+' j\u00e1 pesa mais de 50%':'')+(sc(o.x).n.length?' \u00b7 '+sc(o.x).n.join(" \u00b7 "):'')+'</small></div><div>'+tg(o.s)+'<button class="d" onclick="S.c.splice('+o.i+',1);sv();op()">✕</button></div></div>'}).join("")+(L.length>=3?"":'<p class="mu">Adicione ao menos 3 fundos para ter o ranking.</p>'):'<p class="mu">Nenhum fundo passou nos filtros (cota entre R$ 5 e R$ 13, liquidez e nota igual ou acima da m\u00e9dia da sua carteira). '+(S.cd?'Base: '+S.cd.n+' fundos; com liquidez ok: '+S.cd.l+'; com DY: '+S.cd.d+'.':'Dados de mercado não carregados (confira data/mercado.json e recarregue com Ctrl+F5).')+'</p>';
  $("cf").innerHTML=form("c");S.f.opp=L.length&&L[0].s>=75?1:0;sv();fresh()}
 function form(m,x){x=x||{};var f=function(i,l,v){return '<div><label>'+l+'</label><input id="'+m+i+'" value="'+(v==null?"":v)+'" inputmode="decimal"></div>'};
  return '<div class="g"><div><label>Código</label><input id="'+m+'t" value="'+(x.t||"")+'" placeholder="MXRF11"></div><div><label>Tipo</label><select id="'+m+'tp"><option'+(x.tp=="Agro"?"":" selected")+'>FII</option><option'+(x.tp=="Agro"?" selected":"")+'>Agro</option></select></div>'+(m=="a"?f("q","Quantidade de cotas",x.q)+f("pm","Preço médio (R$)",x.pm):"")+f("price","Cotação atual (R$)",x.price)+f("pvp","P/VP",x.pvp)+f("dy","DY 12 meses (%)",x.dy)+f("vac","Vacância (%) opcional",x.vac)+f("liq","Liquidez diária (R$ mil)",x.liq)+'</div><button style="width:100%;margin-top:10px" onclick="sf(\''+m+'\')">Salvar</button>'}
@@ -117,7 +129,7 @@ var ed=-1;
 function sf(m){var o=rd(m);if(!o.t){alert("Informe o código");return}
  if(m=="a"){if(!o.q){alert("Informe a quantidade");return}if(ed>=0)S.a[ed]=o;else S.a.push(o);ed=-1}else{delete o.q;delete o.pm;S.c.push(o)}
  sv();m=="a"?ge():op()}
-function ge(){
+function ge(){if($("syr")){$("syr").value=CF.rp||"";$("syt").value=CF.tk||""}
  $("la").innerHTML=S.a.length?S.a.map(function(x,i){return '<div class="r"><div><b>'+x.t+'</b> <small class="mu">'+x.tp+' · '+x.q+' cotas · '+R(x.q*pr(x))+'</small></div><div><button class="s" style="padding:6px 10px" onclick="ed='+i+';ge()">Editar</button><button class="d" onclick="if(confirm(\'Excluir?\')){S.a.splice('+i+',1);sv();ge()}">✕</button></div></div>'}).join(""):'<p class="mu">Nenhum ativo ainda.</p>';
  $("fa").innerHTML=form("a",ed>=0?S.a[ed]:null);$("ta").textContent=ed>=0?"Editar ativo":"Adicionar ativo";
  $("ld").innerHTML=S.d.slice().sort(function(a,b){return a.dt<b.dt?1:-1}).slice(0,8).map(function(d){var i=S.d.indexOf(d);return '<div class="r"><span><b>'+d.t+'</b> '+d.dt.split("-").reverse().join("/")+'</span><span>'+R(d.v)+'<button class="d" onclick="S.d.splice('+i+',1);sv();ge()">✕</button></span></div>'}).join("")}
@@ -199,7 +211,7 @@ var M={};
 function aplica(){var F=M.fundos||{};if(!Object.keys(F).length)return;var ks=Object.keys(F);S.cd={n:ks.length,l:ks.filter(function(t){return F[t].liq>=500}).length,d:ks.filter(function(t){return F[t].dy!=null}).length};
  S.a.forEach(function(a){var m=F[a.t];if(m){if(m.preco)a.price=m.preco;a.pvp=m.pvp;if(m.dy!=null)a.dy=m.dy;if(m.liq!=null)a.liq=m.liq}});
  var own={};S.a.forEach(function(a){own[a.t]=1});
- S.c=Object.keys(F).filter(function(t){var m=F[t];return !own[t]&&m.liq>=500&&m.pvp<=1.15&&(m.dy==null||m.dy>=6)}).map(function(t){var m=F[t];return{t:t,tp:"FII",price:m.preco,pvp:m.pvp,dy:m.dy,vac:null,liq:m.liq}}).sort(function(a,b){return sc(b).s-sc(a).s}).slice(0,10);sv()}
+ S.c=Object.keys(F).filter(function(t){var m=F[t];return !own[t]&&m.preco>=5&&m.preco<=13&&m.liq>=500&&m.pvp<=1.15&&(m.dy==null||m.dy>=6)}).map(function(t){var m=F[t];return{t:t,tp:m.tp||"FII",price:m.preco,pvp:m.pvp,dy:m.dy,vac:null,liq:m.liq}}).sort(function(a,b){return sc(b).s-sc(a).s}).slice(0,10);sv()}
 try{fetch("data/mercado.json?"+Date.now()).then(function(r){return r.json()}).then(function(j){M=j;aplica();home();if(j.atualizado){var p=document.createElement("p");p.className="mu";p.textContent="Indicadores de mercado atualizados em "+j.atualizado.split("-").reverse().join("/");$("al").after(p)}}).catch(function(){})}catch(e){}
-home();
+home();pull();
 </script></body></html>
