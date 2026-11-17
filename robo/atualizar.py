@@ -1,5 +1,5 @@
 # Robo gratuito: baixa dados oficiais (CVM e B3) e gera data/mercado.json
-import io, csv, json, zipfile, datetime as dt, requests
+import io, re, csv, json, zipfile, datetime as dt, requests
 
 HOJE = dt.date.today()
 ST = {}
@@ -31,6 +31,44 @@ def cvm(ano):
         if k:
             out[k] = list(csv.DictReader(io.TextIOWrapper(z.open(n), encoding="latin-1"), delimiter=";"))
     return out
+
+def fiagro():
+    """Informes mensais de Fiagro (conjunto separado da CVM, ultimos 12 meses)."""
+    a, m = HOJE.year, HOJE.month
+    tk, hs, arqs, nlin = {}, {}, {}, 0
+    for _ in range(13):
+        m -= 1
+        if m == 0:
+            a, m = a - 1, 12
+        ym = "%d%02d" % (a, m)
+        try:
+            z = zipfile.ZipFile(io.BytesIO(baixar(
+                "https://dados.cvm.gov.br/dados/FIAGRO/DOC/INF_MENSAL/DADOS/inf_mensal_fiagro_%s.zip" % ym)))
+        except Exception:
+            continue
+        for n in z.namelist():
+            if not n.lower().endswith(".csv"):
+                continue
+            rows = list(csv.DictReader(io.TextIOWrapper(z.open(n), encoding="latin-1"), delimiter=";"))
+            if rows:
+                arqs.setdefault(n.replace(ym, "AAAAMM"), list(rows[0].keys())[:60])
+            for r in rows:
+                nlin += 1
+                cnpj = col(r, "cnpj")
+                ref = col(r, "data_ref") or col(r, "competencia") or col(r, "dt_comptc")
+                if not cnpj or not ref:
+                    continue
+                isin = (col(r, "isin") or "").strip()
+                if isin.startswith("BR") and "CTF" in isin:
+                    tk[cnpj] = isin[2:6] + "11"
+                for k, v in r.items():
+                    if v and re.fullmatch(r"[A-Z]{4}11", v.strip()) and any(x in k.lower() for x in ("negoc", "ticker", "codigo")):
+                        tk[cnpj] = v.strip()
+                vp, dy = num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield"))
+                p = hs.setdefault(cnpj, {}).get(ref, (0, None, None))
+                hs[cnpj][ref] = (0, vp or p[1], dy or p[2])
+    ST["fiagro"] = {"arquivos": arqs, "linhas": nlin, "cnpjs": len(hs), "com_ticker": len([c for c in hs if c in tk])}
+    return tk, hs
 
 def cotacoes(ano):
     z = zipfile.ZipFile(io.BytesIO(baixar(
@@ -72,6 +110,14 @@ def main():
             ST["cvm%d" % ano] = "ok"
         except Exception as e:
             ST["cvm%d" % ano] = "erro: %s" % e
+    # 2b) Fiagros (conjunto proprio da CVM)
+    try:
+        tk2, hs2 = fiagro()
+        tick.update(tk2)
+        for c, mm in hs2.items():
+            hist.setdefault(c, {}).update(mm)
+    except Exception as e:
+        ST["fiagro_erro"] = str(e)
     # 3) Indicadores por fundo (usa o CNPJ com informe mais recente de cada codigo)
     vals = sorted(v[2] for m in hist.values() for v in m.values() if v[2])
     esc = 100 if vals and vals[len(vals) // 2] < 0.05 else 1
