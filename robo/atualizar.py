@@ -117,10 +117,12 @@ def main():
             ST["cvm%d" % ano] = "ok"
         except Exception as e:
             ST["cvm%d" % ano] = "erro: %s" % e
+    agro = set()
     # 2b) Fiagros (conjunto proprio da CVM)
     try:
         tk2, hs2 = fiagro()
         tick.update(tk2)
+        agro = set(tk2)
         for c, mm in hs2.items():
             hist.setdefault(c, {}).update(mm)
     except Exception as e:
@@ -163,7 +165,7 @@ def main():
                 dy = round(dy, 1) if 0 < dy < 40 else None
             pvp = preco / vp
             if 0.2 < pvp < 3:
-                F[t] = {"preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
+                F[t] = {"tp": "Agro" if cnpj in agro else "FII", "preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
                         "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1]}
         if t in ("AAZQ11", "AGRX11", "CPTR11", "FGAA11"):
             diag[t] = ("ok " + json.dumps(F[t])) if t in F else (motivo or "fora da faixa de P/VP")
