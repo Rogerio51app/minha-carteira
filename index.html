@@ -156,6 +156,10 @@ function dyp(){var mc=iso(new Date()).slice(0,7),ms={},T={};
 function dyv(x){return x.dy2!=null?x.dy2:x.dy}
 function days(s){return s?Math.floor((Date.now()-new Date(s))/864e5):999}
 function fresh(){S.f.rel=days(S.imp.p)>7?1:0;sv()}
+function tkm(ds,P){var u=ds.toUpperCase().replace(/^RENDIMENTO\s*-\s*/,"").replace(/^(FIAGRO|FII|FIDC|FIP)\s+/,""),tk=u.split(/\s+/).filter(function(x){return !/^(CI|ER|ED|EJ|ES|ET|UN|CF)$/.test(x)}).join(""),
+ c=P.filter(function(p){return tk.indexOf(p.t.slice(0,4))>-1});if(c.length==1)return c[0].t;
+ c=P.filter(function(p){var i=0,s=p.t.slice(0,4);for(var j=0;j<tk.length&&i<4;j++)if(tk[j]==s[i])i++;return i==4});
+ return c.length==1?c[0].t:ds.replace(/^RENDIMENTO\s*-\s*/i,"")}
 function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{header:1}),mode=0,c={},P=[],k=0;
  rows.forEach(function(r){var cl=r.map(function(x){return String(x==null?"":x).trim()}),ix=function(s){return cl.indexOf(s)};
   if(ix("Data")>-1&&ix("Transação")>-1){mode=2;c={d:ix("Data"),x:ix("Transação"),t:ix("Código"),v:ix("Valor Líquido R$")};return}
@@ -165,7 +169,12 @@ function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{
   else if(mode==2&&cl[c.x]=="RENDIMENTO"){var dt=new Date(Math.round((r[c.d]-25569)*864e5)).toISOString().slice(0,10),t2=(cl[c.t]||"").replace("*",""),v=num(r[c.v]);if(!v||S.d.some(function(x){return x.t==t2&&x.dt==dt&&Math.abs(x.v-v)<.01}))return;S.d.push({t:t2,v:v,dt:dt});k++}});
  if(!P.length)throw 0;var old=S.a,rem=old.filter(function(a){return !P.some(function(p){return p.t==a.t})}).length;
  S.a=P.map(function(p){var o=old.filter(function(a){return a.t==p.t})[0]||{};return{t:p.t,tp:p.tp,q:p.q,pm:p.pm,price:p.price,pvp:o.pvp,dy:o.dy,vac:o.vac,liq:o.liq}});
- S.imp.p=iso(new Date());sv();fRl();$("fm").textContent="BTG importado: "+P.length+" ativos, "+k+" rendimentos novos"+(rem?", "+rem+" ativo(s) removido(s) por não estarem mais na posição":"")+"."}
+ var tn=wb.SheetNames.filter(function(n){return /Tr.nsito/i.test(n)})[0],k2=0;
+ if(tn){S.d=S.d.filter(function(d){return !d.tr});
+  XLSX.utils.sheet_to_json(wb.Sheets[tn],{header:1}).forEach(function(r){var ds=r.filter(function(c){return typeof c=="string"&&/^RENDIMENTO/i.test(c.trim())})[0];if(!ds)return;
+   var dn=r.filter(function(c){return typeof c=="number"&&c>40000&&c<60000})[0],vn=r.filter(function(c){return typeof c=="number"&&c<40000}),v=vn[vn.length-1];if(!dn||!v)return;
+   S.d.push({t:tkm(ds,P),v:v,dt:new Date(Math.round((dn-25569)*864e5)).toISOString().slice(0,10),tr:1});k2++})}
+ S.imp.p=iso(new Date());sv();fRl();$("fm").textContent="BTG importado: "+P.length+" ativos, "+k+" rendimentos novos, "+k2+" pagamento(s) a receber"+(rem?", "+rem+" ativo(s) removido(s) por não estarem mais na posição":"")+"."}
 function alertas(){fresh();var h="";if(S.f.rel)h+='<button class="s" onclick="go(\'rl\')">📄 Relatórios</button>';if(S.f.ate.length)h+='<button class="s" style="color:var(--ba)" onclick="go(\'at\')">⚠️ Atenção ('+S.f.ate.length+')</button>';if(S.f.opp)h+='<button class="s" onclick="go(\'op\')">⭐ Oportunidade</button>';$("al").innerHTML=h?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">'+h+'</div>':""}
 function ate(w){var a=[],V=["Confira o motivo no último relatório gerencial e nos fatos relevantes do fundo (site do administrador ou Fundos.NET, em fnet.bmfbovespa.com.br).","Decida a quantidade: venda tudo se o problema for estrutural (corte de proventos, vacância ou inadimplência subindo); venda só parte se o problema for o peso.","Na plataforma de negociação do BTG (app ou homebroker), busque o código, escolha Vender e use ordem limitada, no preço que você aceita, nunca a mercado.","Depois de executada, volte aqui, toque em Registrar por voz e diga: vendi X cotas de CÓDIGO a PREÇO.","Lucro na venda de cotas de FII tem imposto de 20%, sem isenção. Confirme com seu contador; não sou consultor tributário."];
  S.a.forEach(function(x,i){var r=sc(x),pl=x.pm&&pr(x)?(pr(x)/x.pm-1)*100:null,pj=pl!=null&&pl<0;
