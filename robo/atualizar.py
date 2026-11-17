@@ -67,6 +67,13 @@ def fiagro():
                 vp, dy = num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield"))
                 p = hs.setdefault(cnpj, {}).get(ref, (0, None, None))
                 hs[cnpj][ref] = (0, vp or p[1], dy or p[2])
+    # normaliza a escala do DY dos Fiagros para fracao (0,0085 = 0,85%)
+    vs = sorted(v[2] for mm in hs.values() for v in mm.values() if v[2])
+    med = vs[len(vs) // 2] if vs else None
+    if med is not None and med >= 0.05:
+        for c in hs:
+            hs[c] = {r: (v[0], v[1], (v[2] / 100 if v[2] else v[2])) for r, v in hs[c].items()}
+    ST["fiagro_dy_mediana_original"] = med
     ST["fiagro"] = {"arquivos": arqs, "linhas": nlin, "cnpjs": len(hs), "com_ticker": len([c for c in hs if c in tk])}
     return tk, hs
 
