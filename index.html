@@ -76,9 +76,15 @@ function syst(t){var e=$("sy");if(e)e.textContent=t}
 function push(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){return r.status==404?null:r.json()}).then(function(g){if(!S.upd)S.upd=new Date().toISOString();var b={message:"sync",content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))};if(g&&g.sha)b.sha=g.sha;return gh("PUT",b)}).then(function(r){syst(r.ok?"Sincronizado \u00e0s "+new Date().toLocaleTimeString("pt-BR"):"Erro ao enviar ("+r.status+"). Confira o token e o reposit\u00f3rio.")}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
 function pull(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){if(r.status==404)return push();if(!r.ok){syst("Erro ao ler ("+r.status+"). Confira o token e o reposit\u00f3rio.");return}return r.json().then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));if((R.upd||"")>(S.upd||"")){S=R;lj=sj();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.")}else if((R.upd||"")<(S.upd||""))return push();else syst("Sincronizado.")})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
 function tst(){var o=[],tk=$("syt").value.trim(),rp=$("syr").value.trim(),hd={Authorization:"Bearer "+tk},
- st=function(n,u,x){return fetch(u,{headers:x||{}}).then(function(r){o.push(n+": HTTP "+r.status)}).catch(function(e){o.push(n+": FALHOU ("+(e&&e.message)+")")})};
+ st=function(n,u,x,f){return fetch(u,{headers:x||{}}).then(function(r){o.push(n+": HTTP "+r.status);return f&&r.ok?r.json().then(f):0}).catch(function(e){o.push(n+": FALHOU ("+(e&&e.message)+")")})};
  $("sy").textContent="Testando...";
- st("1) GitHub sem token","https://api.github.com/zen").then(function(){return st("2) Com o token","https://api.github.com/rate_limit",hd)}).then(function(){return st("3) Reposit\u00f3rio","https://api.github.com/repos/"+rp,hd)}).then(function(){return st("4) Arquivo de dados","https://api.github.com/repos/"+rp+"/contents/carteira.json",hd)}).then(function(){$("sy").innerHTML=o.join("<br>")})}
+ st("1) GitHub sem token","https://api.github.com/zen")
+ .then(function(){return st("2) Com o token","https://api.github.com/rate_limit",hd)})
+ .then(function(){return st("3) Repositório informado ("+rp+")","https://api.github.com/repos/"+rp,hd)})
+ .then(function(){return st("4) Repositório público do app, sem token","https://api.github.com/repos/Rogerio51app/minha-carteira")})
+ .then(function(){return st("5) Seu usuário","https://api.github.com/user",hd,function(j){o.push("&nbsp;&nbsp;usuário: "+j.login)})})
+ .then(function(){return st("6) Repositórios que o token enxerga","https://api.github.com/user/repos?per_page=30",hd,function(j){o.push("&nbsp;&nbsp;"+(j.map(function(x){return x.full_name}).join(", ")||"nenhum"))})})
+ .then(function(){$("sy").innerHTML=o.join("<br>")})}
 function sy(){CF={tk:$("syt").value.trim(),rp:$("syr").value.trim()};try{localStorage.setItem("mcsync",JSON.stringify(CF))}catch(e){}syst("Conectando...");pull()}
 document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
 var $=function(i){return document.getElementById(i)};
