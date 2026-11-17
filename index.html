@@ -31,7 +31,7 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <header><h1>Minha carteira</h1><span>By Rogério Moraes - investimentos</span></header>
 
 <div id="home" class="v on">
-<div class="card"><h2>Resumo da carteira</h2><div class="g" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g" id="dm"></div><button class="s" style="width:100%;margin-top:10px" onclick="go('dv')">\ud83d\udcca M\u00eas anterior x m\u00eas atual</button></div><div id="al"></div>
+<div class="card"><h2>Resumo da carteira</h2><div class="g" id="res"></div></div><div class="card"><h2>Dividendos</h2><div class="g" id="dm"></div><button class="s" style="width:100%;margin-top:10px" onclick="go('dv')">📊 Mês anterior x mês atual</button></div><div id="al"></div>
 <div class="bt">
 <button onclick="go('bh')">📊 Buy and Hold</button>
 <button onclick="go('re')">💰 Reinvestir meus dividendos</button>
@@ -53,13 +53,13 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <p class="mu">Toque e fale, por exemplo: “comprei 10 cotas de MXRF11 a 9,50”. Você confere e confirma antes de salvar.</p>
 <button style="width:100%" onclick="voz()">🎤 Falar agora</button><p id="vm" class="mu"></p><div id="vf"></div></div></div>
 
-<div id="dv" class="v"><button class="s" onclick="go('home')">\u2190 Voltar</button><div class="card" style="margin-top:12px"><h2>Dividendos: m\u00eas anterior x m\u00eas atual</h2><div class="g" id="dv2"></div></div></div>
+<div id="dv" class="v"><button class="s" onclick="go('home')">← Voltar</button><div class="card" style="margin-top:12px"><h2>Dividendos: mês anterior x mês atual</h2><div class="g" id="dv2"></div></div></div>
 <div id="rl" class="v"><button class="s" onclick="go('home')">← Voltar</button><h2 style="margin-top:12px">📄 Relatórios que o app precisa</h2><div id="rlr"></div></div>
 <div id="at" class="v"><button class="s" onclick="go('home')">← Voltar</button><h2 style="margin-top:12px">⚠️ Atenção: o que fazer</h2><div id="atr"></div></div>
 <div id="ge" class="v"><button class="s" onclick="go('home')">← Voltar</button>
 <div class="card" style="margin-top:12px"><h2>Meus ativos</h2><div id="la"></div><h2 style="margin-top:16px" id="ta">Adicionar ativo</h2><div id="fa"></div></div>
 <div class="card"><h2>Proventos (dividendos)</h2><div id="ld"></div><div class="g"><div><label>Ativo</label><input id="dt" placeholder="MXRF11"></div><div><label>Valor total (R$)</label><input id="dv" inputmode="decimal"></div></div><label>Data de pagamento</label><input id="dd" type="date"><button style="width:100%;margin-top:10px" onclick="addD()">Salvar provento</button></div>
-<div class="card"><h2>Sincronizar notebook e celular</h2><p class="mu">Mant\u00e9m os dois aparelhos iguais, sozinho. Preencha uma vez em cada aparelho.</p><label>Reposit\u00f3rio privado (usuario/nome)</label><input id="syr" placeholder="Rogerio51app/carteira-dados"><label>Token do GitHub</label><input id="syt" type="password"><button style="width:100%;margin-top:10px" onclick="sy()">Salvar e sincronizar</button><p id="sy" class="mu"></p></div>
+<div class="card"><h2>Sincronizar notebook e celular</h2><p class="mu">Mantém os dois aparelhos iguais, sozinho. Preencha uma vez em cada aparelho.</p><label>Repositório privado (usuario/nome)</label><input id="syr" placeholder="Rogerio51app/carteira-dados"><label>Token do GitHub</label><input id="syt" type="password"><button style="width:100%;margin-top:10px" onclick="sy()">Salvar e sincronizar</button><p id="sy" class="mu"></p></div>
 <div class="card"><h2>Backup e troca de aparelho</h2><p class="mu">Seus dados ficam só neste aparelho. Para levar ao outro, copie o código abaixo e cole no outro, em “Restaurar”.</p>
 <button class="s" style="width:100%" onclick="bk()">Gerar código de backup</button><textarea id="bx" rows="3" style="margin-top:8px"></textarea><button class="s" style="width:100%;margin-top:8px" onclick="rs()">Restaurar a partir do código</button></div></div>
 </div>
@@ -71,10 +71,10 @@ var CF={},lj="",tm=null;try{CF=JSON.parse(localStorage.getItem("mcsync")||"{}")}
 function sj(){return JSON.stringify(S,function(k,v){return(k=="upd"||k=="f"||k=="c"||k=="cd"||k=="dy2"||k=="price")?undefined:v})}
 function sv(){var j=sj();if(j!=lj){lj=j;S.upd=new Date().toISOString();clearTimeout(tm);tm=setTimeout(push,2500)}try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 lj=sj();
-function gh(m,b){return fetch("https://api.github.com/repos/"+CF.rp+"/contents/carteira.json",{method:m,headers:{Authorization:"Bearer "+CF.tk,Accept:"application/vnd.github+json"},body:b?JSON.stringify(b):undefined})}
+function gh(m,b){return fetch("https://api.github.com/repos/"+CF.rp+"/contents/carteira.json",{method:m,headers:{Authorization:"Bearer "+CF.tk},body:b?JSON.stringify(b):undefined})}
 function syst(t){var e=$("sy");if(e)e.textContent=t}
-function push(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){return r.status==404?null:r.json()}).then(function(g){if(!S.upd)S.upd=new Date().toISOString();var b={message:"sync",content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))};if(g&&g.sha)b.sha=g.sha;return gh("PUT",b)}).then(function(r){syst(r.ok?"Sincronizado \u00e0s "+new Date().toLocaleTimeString("pt-BR"):"Erro ao enviar ("+r.status+"). Confira o token e o reposit\u00f3rio.")}).catch(function(){syst("Sem conex\u00e3o para sincronizar.")})}
-function pull(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){if(r.status==404)return push();if(!r.ok){syst("Erro ao ler ("+r.status+"). Confira o token e o reposit\u00f3rio.");return}return r.json().then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));if((R.upd||"")>(S.upd||"")){S=R;lj=sj();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.")}else if((R.upd||"")<(S.upd||""))return push();else syst("Sincronizado.")})}).catch(function(){syst("Sem conex\u00e3o para sincronizar.")})}
+function push(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){return r.status==404?null:r.json()}).then(function(g){if(!S.upd)S.upd=new Date().toISOString();var b={message:"sync",content:btoa(unescape(encodeURIComponent(JSON.stringify(S))))};if(g&&g.sha)b.sha=g.sha;return gh("PUT",b)}).then(function(r){syst(r.ok?"Sincronizado \u00e0s "+new Date().toLocaleTimeString("pt-BR"):"Erro ao enviar ("+r.status+"). Confira o token e o reposit\u00f3rio.")}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
+function pull(){if(!CF.tk)return Promise.resolve();return gh("GET").then(function(r){if(r.status==404)return push();if(!r.ok){syst("Erro ao ler ("+r.status+"). Confira o token e o reposit\u00f3rio.");return}return r.json().then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));if((R.upd||"")>(S.upd||"")){S=R;lj=sj();try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.")}else if((R.upd||"")<(S.upd||""))return push();else syst("Sincronizado.")})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
 function sy(){CF={tk:$("syt").value.trim(),rp:$("syr").value.trim()};try{localStorage.setItem("mcsync",JSON.stringify(CF))}catch(e){}syst("Conectando...");pull()}
 document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
 var $=function(i){return document.getElementById(i)};
