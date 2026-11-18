@@ -3,6 +3,7 @@ import io, re, csv, json, zipfile, datetime as dt, requests
 
 HOJE = dt.date.today()
 ISIN2T = {}
+TICKER_CNPJ = {"RURA11": "42.479.593/0001-60"}
 MEUS = ["AAZQ11","AGRX11","CPTR11","FGAA11","GARE11","GGRC11","LIFE11","MANA11","MCRE11","RURA11","RZAG11","SNEL11","VGIA11","WHGR11","XPCA11"]
 ST = {}
 
@@ -71,12 +72,8 @@ def fiagro():
                 vp, dy = num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield"))
                 p = hs.setdefault(cnpj, {}).get(ref, (0, None, None))
                 hs[cnpj][ref] = (0, vp or p[1], dy or p[2])
-    # normaliza a escala do DY dos Fiagros para fracao (0,0085 = 0,85%)
     vs = sorted(v[2] for mm in hs.values() for v in mm.values() if v[2])
     med = vs[len(vs) // 2] if vs else None
-    if med is not None and med >= 0.05:
-        for c in hs:
-            hs[c] = {r: (v[0], v[1], (v[2] / 100 if v[2] else v[2])) for r, v in hs[c].items()}
     ST["fiagro_dy_mediana_original"] = med
     ST["fiagro"] = {"arquivos": arqs, "linhas": nlin, "cnpjs": len(hs), "com_ticker": len([c for c in hs if c in tk])}
     return tk, hs
@@ -125,6 +122,14 @@ def cotacoes():
         ST["b3_erros"] = erros[:4]
     return {t: sorted((d, p, v) for d, (p, v) in dd.items()) for t, dd in D.items()}
 
+def pct_mes(x, vp):
+    """O campo de yield mensal da CVM vem em fracao (0,0089), em percentual (0,89) ou em R$ por cota (0,09),
+    conforme o administrador. Devolve % ao mes sobre o valor patrimonial (faixa plausivel: 0,25 a 3,5)."""
+    for c in (x * 100, x, (x / vp * 100) if vp else None):
+        if c is not None and 0.25 <= c <= 3.5:
+            return c
+    return None
+
 def main():
     # 1) Cotacoes e liquidez (B3)
     try:
@@ -156,6 +161,7 @@ def main():
         except Exception as e:
             ST["cvm%d" % ano] = "erro: %s" % e
     agro = set()
+    hs2 = {}
     # 2b) Fiagros (conjunto proprio da CVM)
     try:
         tk2, hs2 = fiagro()
@@ -165,6 +171,15 @@ def main():
             hist.setdefault(c, {}).update(mm)
     except Exception as e:
         ST["fiagro_erro"] = str(e)
+    dig = {re.sub(r"\D", "", c): c for c in hist}
+    for t, c in TICKER_CNPJ.items():
+        k = dig.get(re.sub(r"\D", "", c))
+        if k:
+            tick[k] = t
+            if k in hs2:
+                agro.add(k)
+        else:
+            ST.setdefault("cnpj_manual_sem_dados", []).append(t)
     # 3) Indicadores por fundo (usa o CNPJ com informe mais recente de cada codigo)
     vals = sorted(v[2] for m in hist.values() for v in m.values() if v[2])
     esc = 100 if vals and vals[len(vals) // 2] < 0.05 else 1
@@ -184,6 +199,7 @@ def main():
         refs = sorted(meses)[-12:]
         vp = meses[refs[-1]][1]
         dys = [meses[r][2] for r in refs if meses[r][2]]
+        pcts = [p for p in (pct_mes(d, vp) for d in dys) if p is not None]
         sess = sorted(C[t])[-20:]
         preco = sess[-1][1]
         try:
@@ -198,15 +214,15 @@ def main():
             motivo = "sem VP ou poucas negociacoes"
         if motivo is None:
             dy = None
-            if len(dys) >= 6:
-                dy = sum(dys) * esc * 12 / len(dys) / 100 * vp / preco * 100
+            if len(pcts) >= 6:
+                dy = sum(pcts) / len(pcts) * 12 / 100 * vp / preco * 100
                 dy = round(dy, 1) if 0 < dy < 40 else None
             pvp = preco / vp
             if 0.2 < pvp < 3:
                 F[t] = {"tp": "Agro" if cnpj in agro else "FII", "preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
                         "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1]}
         if t in MEUS:
-            diag[t] = ("ok " if t in F else (motivo or "fora da faixa de P/VP")) + " | ref=" + ref[:10] + " vp=" + str(vp) + " dy_mensal=" + str([round(d * esc, 3) for d in dys]) + (" | " + json.dumps(F[t]) if t in F else "")
+            diag[t] = ("ok " if t in F else (motivo or "fora da faixa de P/VP")) + " | ref=" + ref[:10] + " vp=" + str(vp) + " dy_mensal_%=" + str([round(p, 2) for p in pcts]) + " bruto_cvm=" + str(dys[-3:]) + (" | " + json.dumps(F[t]) if t in F else "")
     for t in MEUS:
         if t not in diag:
             diag[t] = "sem cotacao na B3" if t not in C else "sem historico na CVM"
