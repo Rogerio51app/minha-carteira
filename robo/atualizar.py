@@ -81,24 +81,55 @@ def fiagro():
     ST["fiagro"] = {"arquivos": arqs, "linhas": nlin, "cnpjs": len(hs), "com_ticker": len([c for c in hs if c in tk])}
     return tk, hs
 
-def cotacoes(ano):
-    z = zipfile.ZipFile(io.BytesIO(baixar(
-        "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A%d.ZIP" % ano)))
-    D = {}
+BASE = "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_%s.ZIP"
+
+def ler_cotahist(conteudo, D):
+    z = zipfile.ZipFile(io.BytesIO(conteudo))
     for l in io.TextIOWrapper(z.open(z.namelist()[0]), encoding="latin-1"):
         if l[:2] != "01" or l[24:27] != "010":
             continue
         t = l[12:24].strip()
         if len(t) == 6 and t.endswith("11"):
             ISIN2T[l[230:242].strip()] = t
-            D.setdefault(t, []).append((l[2:10], int(l[108:121]) / 100, int(l[170:188]) / 100))
-    return D
+            D.setdefault(t, {})[l[2:10]] = (int(l[108:121]) / 100, int(l[170:188]) / 100)
+
+def cotacoes():
+    """Tenta o arquivo anual; se nao existir, usa mensais (meses fechados) + diarios do mes corrente."""
+    D, erros, usados = {}, [], []
+    def tentar(nome):
+        try:
+            ler_cotahist(baixar(BASE % nome), D)
+            usados.append(nome)
+            return True
+        except Exception as e:
+            erros.append("%s: %s" % (nome, str(e)[:70]))
+            return False
+    if not tentar("A%d" % HOJE.year):
+        ref = HOJE.replace(day=1)
+        for _ in range(2):  # dois meses fechados
+            ref = ref - dt.timedelta(days=1)
+            tentar("M%02d%d" % (ref.month, ref.year))
+            ref = ref.replace(day=1)
+        dia = HOJE.replace(day=1)
+        while dia <= HOJE:  # dias uteis do mes corrente
+            if dia.weekday() < 5:
+                tentar("D%02d%02d%d" % (dia.day, dia.month, dia.year))
+            dia += dt.timedelta(days=1)
+        if not D:  # ultima tentativa: ultimos 45 dias
+            for k in range(1, 46):
+                dia = HOJE - dt.timedelta(days=k)
+                if dia.weekday() < 5:
+                    tentar("D%02d%02d%d" % (dia.day, dia.month, dia.year))
+    ST["b3_arquivos"] = "%d ok" % len(usados) + (" (ex.: %s)" % usados[-1] if usados else "")
+    if erros:
+        ST["b3_erros"] = erros[:4]
+    return {t: sorted((d, p, v) for d, (p, v) in dd.items()) for t, dd in D.items()}
 
 def main():
     # 1) Cotacoes e liquidez (B3)
     try:
-        C = cotacoes(HOJE.year)
-        ST["b3"] = "ok: %d codigos" % len(C)
+        C = cotacoes()
+        ST["b3"] = ("ok: %d codigos" % len(C)) if C else "erro: nenhum arquivo de cotacoes baixado"
     except Exception as e:
         C = {}
         ST["b3"] = "erro: %s" % e
