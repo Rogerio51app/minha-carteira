@@ -187,16 +187,16 @@ function dyp(){var t=new Date(),mc=iso(t).slice(0,7),pm=new Date(t.getFullYear()
  S.a.forEach(function(x){x.dy2=null;var v=T[x.t],p=pr(x);if(x.dyM||!v||!(p>0))return;
   var sp=py*12+pn-ix(F0[x.t])+1,o=v/sp*12/p*100;if(o<60&&(!x.dy||x.dy*2<o||sp>=3))x.dy2=o})}
 function dyv(x){return x.dy2!=null?x.dy2:x.dy}
-function fInd(){dyp();if(!S.a.length){$("indr").innerHTML='<p class="mu">Importe o seu extrato em Relatórios.</p>';return}
+function fInd(){dyp();if(!S.a.length){$("indr").innerHTML='<p class="mu">Importe o seu extrato em Relat\u00f3rios.</p>';return}
  var w=pesos(),L=S.a.map(function(x,i){return{x:x,w:w[i],s:sc(x).s}}).sort(function(a,b){return b.w-a.w}),sd=0,wd=0,sp=0,wp=0;
  L.forEach(function(o){var d=dyv(o.x);if(d!=null){sd+=o.w*d;wd+=o.w}if(o.x.pvp!=null){sp+=o.w*o.x.pvp;wp+=o.w}});
  var c1=function(v){return v.toFixed(1).replace(".",",")},f2=function(v){return v.toFixed(2).replace(".",",")},
- fl=function(v){return v==null?'<span class="mu">—</span>':'R$ '+(v>=1000?c1(v/1000)+' M':v+' mil')},
- cc=function(ok,bad,v){return v==null?'':ok?'color:var(--ok)':bad?'color:var(--ba)':''},
- h='<p class="mu">DY médio ponderado: <b>'+(wd?c1(sd/wd)+'%':'—')+'</b> · P/VP médio: <b>'+(wp?f2(sp/wp):'—')+'</b></p><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem;white-space:nowrap"><tr class="mu" style="text-align:right"><th style="text-align:left">Ativo</th><th>Cotação</th><th>DY 12m</th><th>P/VP</th><th>Liq./dia</th><th>vs PM</th><th>Nota</th></tr>';
+ fl=function(v){return v==null?"\u2014":"R$ "+(v>=1000?c1(v/1000)+" M":v+" mil")},
+ cc=function(ok,bad,v){return v==null?"":ok?"color:var(--ok)":bad?"color:var(--ba)":""},
+ h='<p class="mu">DY m\u00e9dio ponderado: <b>'+(wd?c1(sd/wd)+"%":"\u2014")+'</b> \u00b7 P/VP m\u00e9dio: <b>'+(wp?f2(sp/wp):"\u2014")+'</b></p><table style="width:100%;border-collapse:collapse;font-size:.82rem"><tr class="mu" style="text-align:right;font-size:.72rem;line-height:1.2"><th style="text-align:left;padding:4px 2px">Ativo</th><th>Cota\u00e7\u00e3o<br>vs PM</th><th>DY 12m</th><th>P/VP<br>Liq./dia</th><th>Nota</th></tr>';
  L.forEach(function(o){var x=o.x,d=dyv(x),p=pr(x),r=x.pm&&p?(p/x.pm-1)*100:null;
-  h+='<tr style="border-top:1px solid var(--bd);text-align:right"><td style="text-align:left"><b>'+x.t+'</b><br><small class="mu">'+x.tp+' · '+c1(o.w)+'%</small></td><td>'+R(p)+'</td><td style="'+cc(d>=10,d<8,d)+'">'+(d!=null?c1(d)+'%'+(x.dy2!=null?'*':''):'—')+'</td><td style="'+cc(x.pvp<=1,x.pvp>1.1,x.pvp)+'">'+(x.pvp!=null?f2(x.pvp):'—')+'</td><td>'+fl(x.liq)+'</td><td style="'+(r==null?'':r>=0?'color:var(--ok)':'color:var(--ba)')+'">'+(r!=null?(r>0?'+':'')+c1(r)+'%':'—')+'</td><td>'+tg(o.s)+'</td></tr>'});
- h+='</table></div><p class="mu">* DY calculado pelos seus recebimentos (últimos 12 meses completos, por cota). Cotação = último fechamento. P/VP, DY (CVM) e liquidez vêm do robô, atualizado em '+(M.atualizado?M.atualizado.split("-").reverse().join("/"):'—')+'. Verde = bom, vermelho = atenção.</p>';
+  h+='<tr style="border-top:1px solid var(--bd);text-align:right;vertical-align:top"><td style="text-align:left;padding:6px 2px"><b>'+x.t+'</b><br><small class="mu">'+x.tp+" \u00b7 "+c1(o.w)+'%</small></td><td style="padding:6px 3px">'+R(p)+'<br><small style="'+(r==null?"":r>=0?"color:var(--ok)":"color:var(--ba)")+'">'+(r!=null?(r>0?"+":"")+c1(r)+"%":"\u2014")+'</small></td><td style="padding:6px 3px;'+cc(d>=10,d<8,d)+'">'+(d!=null?c1(d)+"%"+(x.dy2!=null?"*":""):"\u2014")+'</td><td style="padding:6px 3px;'+cc(x.pvp<=1,x.pvp>1.1,x.pvp)+'">'+(x.pvp!=null?f2(x.pvp):"\u2014")+'<br><small class="mu">'+fl(x.liq)+'</small></td><td style="padding:6px 2px">'+tg(o.s)+"</td></tr>"});
+ h+='</table><p class="mu">* DY calculado pelos seus recebimentos (\u00faltimos 12 meses completos, por cota). Cota\u00e7\u00e3o = \u00faltimo fechamento. P/VP, DY (CVM) e liquidez v\u00eam do rob\u00f4, atualizado em '+(M.atualizado?M.atualizado.split("-").reverse().join("/"):"\u2014")+". Verde = bom, vermelho = aten\u00e7\u00e3o.</p>";
  $("indr").innerHTML=h}
 function days(s){return s?Math.floor((Date.now()-new Date(s))/864e5):999}
 function fresh(){S.f.rel=days(S.imp.p)>7?1:0;sv()}
