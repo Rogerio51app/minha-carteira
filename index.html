@@ -89,7 +89,7 @@ var K="mcart1",S={a:[],d:[],c:[]};
 try{var z=localStorage.getItem(K);if(z)S=JSON.parse(z)}catch(e){}
 var CF={},lj="",tm=null;try{CF=JSON.parse(localStorage.getItem("mcsync")||"{}")}catch(e){}
 function sj(){return JSON.stringify(S,function(k,v){if(k=="upd"||k=="f"||k=="c"||k=="cd"||k=="dy2"||k=="price"||k=="pvp"||k=="liq"||k=="var12"||k=="cnpj"||k=="vp6"||k=="rtd"||k=="rtd2"||(k=="dy"&&!this.dyM))return undefined;return v})}
-function mg(A,B){var wB=((B.imp&&B.imp.p)||"")>((A.imp&&A.imp.p)||""),M={};[A.d||[],B.d||[]].forEach(function(L,li){L.forEach(function(e){if(e.tr&&((li==1)!=wB))return;var k=e.t+"|"+e.dt+"|"+e.v.toFixed(2),o=M[k];if(o){if(o.pc==null&&e.pc!=null)o.pc=e.pc}else M[k]=JSON.parse(JSON.stringify(e))})});return Object.keys(M).map(function(k){return M[k]})}
+function mg(A,B){var bp=(B.imp&&B.imp.p)||"",ap=(A.imp&&A.imp.p)||"",wB=bp>ap||(bp==ap&&(B.upd||"")>(A.upd||"")),M={};[A.d||[],B.d||[]].forEach(function(L,li){L.forEach(function(e){if(e.tr&&((li==1)!=wB))return;var k=e.t+"|"+e.dt+"|"+e.v.toFixed(2),o=M[k];if(o){if(o.pc==null&&e.pc!=null)o.pc=e.pc}else M[k]=JSON.parse(JSON.stringify(e))})});return Object.keys(M).map(function(k){return M[k]})}
 function sv(){var j=sj();if(j!=lj){lj=j;S.upd=new Date().toISOString();clearTimeout(tm);tm=setTimeout(push,2500)}try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 lj=sj();
 function gh(m,b){return fetch("https://api.github.com/repos/"+CF.rp+"/contents/carteira.json",{method:m,headers:{Authorization:"Bearer "+CF.tk},body:b?JSON.stringify(b):undefined})}
@@ -101,9 +101,9 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);sav();return push()}
  else{S.d=mg(S,R);sav();if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="19/11-a";
+var VER="19/11-b";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
-function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
+function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
 function tst(){var o=[],tk=$("syt").value.trim(),rp=$("syr").value.trim(),hd={Authorization:"Bearer "+tk},
  st=function(n,u,x,f){return fetch(u,{headers:x||{}}).then(function(r){o.push(n+": HTTP "+r.status);return f&&r.ok?r.json().then(f):0}).catch(function(e){o.push(n+": FALHOU ("+(e&&e.message)+")")})};
