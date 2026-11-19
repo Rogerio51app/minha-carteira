@@ -33,6 +33,12 @@ def cvm(ano):
         k = "geral" if "_geral_" in n else "compl" if "_complemento_" in n else None
         if k:
             out[k] = list(csv.DictReader(io.TextIOWrapper(z.open(n), encoding="latin-1"), delimiter=";"))
+        elif n.lower().endswith(".csv"):
+            try:
+                cab = io.TextIOWrapper(z.open(n), encoding="latin-1").readline().strip().split(";")
+                ST.setdefault("fii_outros_arquivos", {})[re.sub(r"\d{4}", "AAAA", n)] = cab[:45]
+            except Exception:
+                pass
     return out
 
 def fiagro():
@@ -70,8 +76,9 @@ def fiagro():
                     if v and re.fullmatch(r"[A-Z]{4}11", v.strip()) and any(x in k.lower() for x in ("negoc", "ticker", "codigo")):
                         tk[cnpj] = v.strip()
                 vp, dy = num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield"))
-                p = hs.setdefault(cnpj, {}).get(ref, (0, None, None))
-                hs[cnpj][ref] = (0, vp or p[1], dy or p[2])
+                am = num(col(r, "amortizacao"))
+                p = hs.setdefault(cnpj, {}).get(ref, (0, None, None, None))
+                hs[cnpj][ref] = (0, vp or p[1], dy or p[2], am or p[3])
     vs = sorted(v[2] for mm in hs.values() for v in mm.values() if v[2])
     med = vs[len(vs) // 2] if vs else None
     ST["fiagro_dy_mediana_original"] = med
@@ -122,6 +129,28 @@ def cotacoes():
         ST["b3_erros"] = erros[:4]
     return {t: sorted((d, p, v) for d, (p, v) in dd.items()) for t, dd in D.items()}
 
+def preco_12m():
+    """Fechamento de cada fundo ~12 meses atras (arquivo mensal ou, se faltar, o anual daquele ano)."""
+    alvo = HOJE - dt.timedelta(days=365)
+    ini, fim = (alvo - dt.timedelta(days=10)).strftime("%Y%m%d"), alvo.strftime("%Y%m%d")
+    for nome in ("M%02d%d" % (alvo.month, alvo.year), "A%d" % alvo.year):
+        P = {}
+        try:
+            z = zipfile.ZipFile(io.BytesIO(baixar(BASE % nome)))
+            for l in io.TextIOWrapper(z.open(z.namelist()[0]), encoding="latin-1"):
+                if l[:2] != "01" or l[24:27] != "010" or not (ini <= l[2:10] <= fim):
+                    continue
+                t = l[12:24].strip()
+                if len(t) == 6 and t.endswith("11") and (t not in P or l[2:10] >= P[t][0]):
+                    P[t] = (l[2:10], int(l[108:121]) / 100)
+        except Exception as e:
+            ST.setdefault("p12_erros", []).append("%s: %s" % (nome, str(e)[:60]))
+            continue
+        if P:
+            ST["p12"] = "%s ok: %d fundos" % (nome, len(P))
+            return {t: v[1] for t, v in P.items()}
+    return {}
+
 def pct_mes(x, vp):
     """O campo de yield mensal da CVM vem em fracao (0,0089), em percentual (0,89) ou em R$ por cota (0,09),
     conforme o administrador. Devolve % ao mes sobre o valor patrimonial (faixa plausivel: 0,25 a 3,5)."""
@@ -154,7 +183,7 @@ def main():
                 ver = int(col(r, "versao") or 0)
                 a = hist.setdefault(cnpj, {})
                 if ref not in a or ver >= a[ref][0]:
-                    a[ref] = (ver, num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield")))
+                    a[ref] = (ver, num(col(r, "valor_patrimonial")), num(col(r, "dividend_yield")), num(col(r, "amortizacao")))
             if d.get("compl"):
                 ST["colunas"] = list(d["compl"][0].keys())
             ST["cvm%d" % ano] = "ok"
@@ -180,6 +209,11 @@ def main():
                 agro.add(k)
         else:
             ST.setdefault("cnpj_manual_sem_dados", []).append(t)
+    try:
+        P12 = preco_12m()
+    except Exception as e:
+        P12 = {}
+        ST["p12_erros"] = [str(e)[:80]]
     # 3) Indicadores por fundo (usa o CNPJ com informe mais recente de cada codigo)
     vals = sorted(v[2] for m in hist.values() for v in m.values() if v[2])
     esc = 100 if vals and vals[len(vals) // 2] < 0.05 else 1
@@ -200,6 +234,11 @@ def main():
         vp = meses[refs[-1]][1]
         dys = [meses[r][2] for r in refs if meses[r][2]]
         pcts = [p for p in (pct_mes(d, vp) for d in dys) if p is not None]
+        # sinais indiretos de vacancia/inadimplencia
+        vps = [meses[r][1] for r in refs if meses[r][1]]
+        ams = [meses[r][3] for r in refs[-7:] if len(meses[r]) > 3 and meses[r][3]]
+        vp6 = round((vps[-1] / vps[-7] - 1) * 100, 1) if len(vps) >= 7 and not any(a > 0 for a in ams) else None
+        rtd = round((sum(pcts[-3:]) / 3 / (sum(pcts[-6:-3]) / 3) - 1) * 100, 1) if len(pcts) >= 6 else None
         sess = sorted(C[t])[-20:]
         preco = sess[-1][1]
         try:
@@ -220,7 +259,9 @@ def main():
             pvp = preco / vp
             if 0.2 < pvp < 3:
                 F[t] = {"tp": "Agro" if cnpj in agro else "FII", "preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
-                        "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1]}
+                        "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1],
+                        "var12": round((preco / P12[t] - 1) * 100, 1) if P12.get(t) else None,
+                        "vp6": vp6, "rtd": rtd}
         if t in MEUS:
             diag[t] = ("ok " if t in F else (motivo or "fora da faixa de P/VP")) + " | ref=" + ref[:10] + " vp=" + str(vp) + " dy_mensal_%=" + str([round(p, 2) for p in pcts]) + " bruto_cvm=" + str(dys[-3:]) + (" | " + json.dumps(F[t]) if t in F else "")
     for t in MEUS:
