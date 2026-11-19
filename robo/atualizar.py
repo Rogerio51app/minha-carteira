@@ -3,6 +3,12 @@ import io, re, csv, json, zipfile, datetime as dt, requests
 
 HOJE = dt.date.today()
 ISIN2T = {}
+NOMES = {}
+
+def norm(x):
+    import unicodedata
+    x = unicodedata.normalize("NFD", x.upper())
+    return re.sub(r"[^A-Z0-9]", "", "".join(c for c in x if not unicodedata.combining(c)))
 TICKER_CNPJ = {"RURA11": "42.479.593/0001-60"}
 MEUS = ["AAZQ11","AGRX11","CPTR11","FGAA11","GARE11","GGRC11","LIFE11","MANA11","MCRE11","RURA11","RZAG11","SNEL11","VGIA11","WHGR11","XPCA11"]
 ST = {}
@@ -95,6 +101,8 @@ def ler_cotahist(conteudo, D):
         t = l[12:24].strip()
         if len(t) == 6 and t.endswith("11"):
             ISIN2T[l[230:242].strip()] = t
+            NOMES[norm(l[27:39] + l[39:49])] = t
+            NOMES.setdefault(norm(l[27:39]), t)
             D.setdefault(t, {})[l[2:10]] = (int(l[108:121]) / 100, int(l[170:188]) / 100)
 
 def cotacoes():
@@ -273,7 +281,7 @@ def main():
     ST["fundos"] = len(F)
     ST["com_dy"] = len([1 for f in F.values() if f["dy"] is not None])
     if F:  # so sobrescreve se deu certo
-        json.dump({"atualizado": HOJE.isoformat(), "status": ST, "fundos": F},
+        json.dump({"atualizado": HOJE.isoformat(), "status": ST, "fundos": F, "nomes": NOMES},
                   open("data/mercado.json", "w"), ensure_ascii=False, indent=1)
     print(ST)
 
