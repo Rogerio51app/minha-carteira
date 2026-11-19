@@ -261,7 +261,7 @@ def main():
                 F[t] = {"tp": "Agro" if cnpj in agro else "FII", "preco": round(preco, 2), "pvp": round(pvp, 2), "dy": dy,
                         "liq": round(sum(s[2] for s in sess) / len(sess) / 1000), "ref": refs[-1],
                         "var12": round((preco / P12[t] - 1) * 100, 1) if P12.get(t) else None,
-                        "vp6": vp6, "rtd": rtd}
+                        "vp6": vp6, "rtd": rtd, "cnpj": re.sub(r"\D", "", cnpj)}
         if t in MEUS:
             diag[t] = ("ok " if t in F else (motivo or "fora da faixa de P/VP")) + " | ref=" + ref[:10] + " vp=" + str(vp) + " dy_mensal_%=" + str([round(p, 2) for p in pcts]) + " bruto_cvm=" + str(dys[-3:]) + (" | " + json.dumps(F[t]) if t in F else "")
     for t in MEUS:
