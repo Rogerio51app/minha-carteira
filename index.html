@@ -101,7 +101,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);sav();return push()}
  else{S.d=mg(S,R);sav();if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="19/11-c";
+var VER="19/11-d";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -193,16 +193,16 @@ function cf(){var o=$("vo").value,t=$("vt").value.trim().toUpperCase(),q=n($("vq
  if(o=="compra"){if(x){x.pm=((x.q*x.pm)+(q*(p||x.pm)))/(x.q+q);x.q+=q}else S.a.push({t:t,tp:"FII",q:q,pm:p||0,price:p,pvp:null,dy:null,vac:null,liq:null})}
  else{if(!x){alert("Ativo não está na carteira");return}x.q-=q;if(x.q<=0)S.a.splice(S.a.indexOf(x),1)}
  sv();alert("Registrado!");go("home")}
-function dvs(){var t=new Date(),hj=iso(t),mc=hj.slice(0,7),dp=new Date(t.getFullYear(),t.getMonth()-1,1),mp=dp.toISOString().slice(0,7),NM=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],P={},A={},PC={},AC={},pd={};
- S.d.forEach(function(d){var m=d.dt.slice(0,7);if(m==mp){P[d.t]=(P[d.t]||0)+d.v;if(d.pc)PC[d.t]=(PC[d.t]||0)+d.pc}else if(m==mc){A[d.t]=(A[d.t]||0)+d.v;if(d.pc)AC[d.t]=(AC[d.t]||0)+d.pc;if(d.dt>hj)pd[d.t]=1}});
+function dvs(){var t=new Date(),hj=iso(t),mc=hj.slice(0,7),dp=new Date(t.getFullYear(),t.getMonth()-1,1),mp=dp.toISOString().slice(0,7),NM=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"],P={},A={},PC={},AC={},pd={},es={};
+ S.d.forEach(function(d){var m=d.dt.slice(0,7);if(m==mp){P[d.t]=(P[d.t]||0)+d.v;if(d.pc)PC[d.t]=(PC[d.t]||0)+d.pc}else if(m==mc){A[d.t]=(A[d.t]||0)+d.v;if(d.pc)AC[d.t]=(AC[d.t]||0)+d.pc;else if(d.tr){var qa=(S.a.filter(function(y){return y.t==d.t})[0]||{}).q;if(qa>0){AC[d.t]=(AC[d.t]||0)+d.v/qa;es[d.t]=1}}if(d.dt>hj)pd[d.t]=1}});
  var ks=Object.keys(P).concat(Object.keys(A)).concat(S.a.map(function(a){return a.t})).filter(function(k,i,r){return r.indexOf(k)==i}).sort(),
  f=function(v){return v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})},f3=function(v){return v.toLocaleString("pt-BR",{minimumFractionDigits:3,maximumFractionDigits:3})},ds='<span class="mu">—</span>',
  vr=function(p,a){if(a==null)return ds;if(p==null)return '<span class="mu">novo</span>';var d=a-p;if(Math.abs(d)<0.0005)return "=";return '<span style="color:var('+(d>0?"--ok":"--ba")+')">'+(d>0?"▲ +":"▼ ")+(d/p*100).toFixed(0)+"%</span>"},
  tp=0,ta=0,fa=0,m1=NM[dp.getMonth()],m2=NM[t.getMonth()],
  x='<div class="m" style="grid-column:1/-1;overflow-x:auto;padding:6px"><table style="width:100%;border-collapse:collapse;font-size:.78rem"><tr class="mu" style="text-align:right;font-size:.7rem;line-height:1.15"><th style="text-align:left">Ativo</th><th>'+m1+"<br>R$</th><th>"+m1+"<br>por cota</th><th>"+m2+"<br>R$</th><th>"+m2+"<br>por cota</th><th>Var.</th></tr>";
  ks.forEach(function(k){var p=P[k],a=A[k],pc=PC[k],ac=AC[k],b=(pc!=null&&ac!=null)?[pc,ac]:[p,a];if(p!=null)tp+=p;if(a!=null)ta+=a;else if(p!=null)fa++;
-  x+='<tr style="border-top:1px solid var(--bd);text-align:right"><td style="text-align:left;padding:5px 2px"><b>'+k+"</b></td><td>"+(p!=null?f(p):ds)+"</td><td>"+(pc!=null?f3(pc):ds)+"</td><td>"+(a!=null?f(a)+(pd[k]?" 🕒":" ✅"):ds)+"</td><td>"+(ac!=null?f3(ac):ds)+"</td><td>"+vr(b[0],b[1])+"</td></tr>"});
- x+='<tr style="border-top:2px solid var(--bd);text-align:right"><td style="text-align:left"><b>Total</b></td><td><b>'+f(tp)+"</b></td><td></td><td><b>"+f(ta)+"</b></td><td></td><td></td></tr></table>"+(S.d.length?'<p class="mu" style="margin:8px 0 0">✅ pago · 🕒 a pagar · "—" sem pagamento no mês. Valores em R$ (total recebido) e R$ por cota. A variação usa o valor por cota quando existe nos dois meses, para não ser distorcida por compras ou vendas.'+(S.d.some(function(e){return e.pc!=null})?"":" Reimporte o extrato do BTG para ver o valor por cota.")+(fa?" "+fa+" ativo(s) que pagaram no mês passado ainda não pagaram neste mês.":"")+"</p>":'<p class="mu">Sem registros. Importe o extrato do BTG em Relatórios.</p>')+"</div>";
+  x+='<tr style="border-top:1px solid var(--bd);text-align:right"><td style="text-align:left;padding:5px 2px"><b>'+k+"</b></td><td>"+(p!=null?f(p):ds)+"</td><td>"+(pc!=null?f3(pc):ds)+"</td><td>"+(a!=null?f(a)+(pd[k]?" 🕒":" ✅"):ds)+"</td><td>"+(ac!=null?(es[k]?"~":"")+f3(ac):ds)+"</td><td>"+vr(b[0],b[1])+"</td></tr>"});
+ x+='<tr style="border-top:2px solid var(--bd);text-align:right"><td style="text-align:left"><b>Total</b></td><td><b>'+f(tp)+"</b></td><td></td><td><b>"+f(ta)+"</b></td><td></td><td></td></tr></table>"+(S.d.length?'<p class="mu" style="margin:8px 0 0">✅ pago · 🕒 a pagar · "—" sem pagamento no mês. Valores em R$ (total recebido) e R$ por cota. A variação usa o valor por cota quando existe nos dois meses, para não ser distorcida por compras ou vendas. ~ = estimado pela quantidade atual de cotas (pagamento ainda a receber).'+(S.d.some(function(e){return e.pc!=null})?"":" Reimporte o extrato do BTG para ver o valor por cota.")+(fa?" "+fa+" ativo(s) que pagaram no mês passado ainda não pagaram neste mês.":"")+"</p>":'<p class="mu">Sem registros. Importe o extrato do BTG em Relatórios.</p>')+"</div>";
  $("dv2").innerHTML=x}
 function dyp(){var t=new Date(),mc=iso(t).slice(0,7),pm=new Date(t.getFullYear(),t.getMonth()-1,1),py=pm.getFullYear(),pn=pm.getMonth(),
  lo=new Date(py,pn-11,1).toISOString().slice(0,7),T={},F0={},ix=function(m){return +m.slice(0,4)*12+ +m.slice(5,7)-1};
@@ -231,7 +231,10 @@ var ID={pvp:[0.8,1.05],dy:[10,20],liq:500};
 function okc(v,lo,hi){return v==null?"":(v>=lo&&v<=hi)?"color:var(--ok)":"color:var(--ba)"}
 function days(s){return s?Math.floor((Date.now()-new Date(s))/864e5):999}
 function fresh(){S.f.rel=days(S.imp.p)>7?1:0;sv()}
-function tkm(ds,P){var u=ds.toUpperCase().replace(/^RENDIMENTO\s*-\s*/,"").replace(/^(FIAGRO|FII|FIDC|FIP)\s+/,""),tk=u.split(/\s+/).filter(function(x){return !/^(CI|ER|ED|EJ|ES|ET|UN|CF)$/.test(x)}).join(""),
+function nz(s){return s.toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^A-Z0-9]/g,"")}
+function tkn(ds){var N=(M&&M.nomes)||{},u=ds.replace(/^RENDIMENTO\s*-\s*/i,"");return N[nz(u)]||N[nz(u.replace(/\s+(CI|ER|ED|EJ|ES|ET|UN|CF)\b/gi,""))]||null}
+function rmap(){var ch=0;S.d.forEach(function(e){if(e.tr&&!/^[A-Z]{4}\d{2}$/.test(e.t)){var z=tkn(e.t);if(z){e.t=z;ch=1}}});if(ch)sv()}
+function tkm(ds,P){var z0=tkn(ds);if(z0)return z0;var u=ds.toUpperCase().replace(/^RENDIMENTO\s*-\s*/,"").replace(/^(FIAGRO|FII|FIDC|FIP)\s+/,""),tk=u.split(/\s+/).filter(function(x){return !/^(CI|ER|ED|EJ|ES|ET|UN|CF)$/.test(x)}).join(""),
  c=P.filter(function(p){return tk.indexOf(p.t.slice(0,4))>-1});if(c.length==1)return c[0].t;
  c=P.filter(function(p){var i=0,s=p.t.slice(0,4);for(var j=0;j<tk.length&&i<4;j++)if(tk[j]==s[i])i++;return i==4});
  return c.length==1?c[0].t:ds.replace(/^RENDIMENTO\s*-\s*/i,"")}
@@ -283,7 +286,7 @@ function imp(){var f=$("fi").files[0],tp=$("ft").value;if(!f){$("fm").textConten
  if(tp=="p"){var ks=Object.keys(M);if(!ks.length)throw 0;ks.forEach(function(t){var x=S.a.filter(function(a){return a.t==t})[0],o=M[t];if(x){x.q=o.q;if(o.pr)x.price=o.pr}else S.a.push({t:t,tp:"FII",q:o.q,pm:o.pr,price:o.pr,pvp:null,dy:null,vac:null,liq:null});k++});S.imp.p=iso(new Date())}else S.imp.d=iso(new Date());
  sv();fRl();$("fm").textContent="Importado: "+k+" registro(s)."}catch(er){$("fm").textContent="Não consegui ler este arquivo. Confira se baixou o relatório certo, em Excel."}};rd.readAsArrayBuffer(f)}
 var M={};
-function aplica(){var F=M.fundos||{};if(!Object.keys(F).length)return;var ks=Object.keys(F);S.cd={n:ks.length,l:ks.filter(function(t){return F[t].liq>=500}).length,d:ks.filter(function(t){return F[t].dy!=null}).length};
+function aplica(){rmap();var F=M.fundos||{};if(!Object.keys(F).length)return;var ks=Object.keys(F);S.cd={n:ks.length,l:ks.filter(function(t){return F[t].liq>=500}).length,d:ks.filter(function(t){return F[t].dy!=null}).length};
  S.a.forEach(function(a){var m=F[a.t];if(m){if(m.preco)a.price=m.preco;a.pvp=m.pvp;if(m.dy!=null&&!a.dyM)a.dy=m.dy;if(m.liq!=null)a.liq=m.liq;if(m.var12!=null)a.var12=m.var12;a.vp6=m.vp6;a.rtd=m.rtd;a.cnpj=m.cnpj}});
  var own={};S.a.forEach(function(a){own[a.t]=1});
  S.c=Object.keys(F).filter(function(t){var m=F[t];return !own[t]&&m.preco>=5&&m.preco<=13&&m.liq>=500&&m.pvp<=1.15&&(m.dy==null||m.dy>=6)}).map(function(t){var m=F[t];return{t:t,tp:m.tp||"FII",price:m.preco,pvp:m.pvp,dy:m.dy,vac:null,liq:m.liq}}).sort(function(a,b){return sc(b).s-sc(a).s}).slice(0,10);sv()}
