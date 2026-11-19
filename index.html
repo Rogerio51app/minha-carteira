@@ -101,7 +101,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);sav();return push()}
  else{S.d=mg(S,R);sav();if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="19/11-b";
+var VER="19/11-c";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -245,7 +245,8 @@ function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{
  if(!P.length)throw 0;var old=S.a,rem=old.filter(function(a){return !P.some(function(p){return p.t==a.t})}).length;
  S.a=P.map(function(p){var o=old.filter(function(a){return a.t==p.t})[0]||{};return{t:p.t,tp:p.tp,q:p.q,pm:p.pm,price:p.price,pvp:o.pvp,dy:o.dy,vac:o.vac,liq:o.liq}});
  var tn=wb.SheetNames.filter(function(n){return /Tr.nsito/i.test(n)})[0],k2=0;
- if(tn){S.d=S.d.filter(function(d){return !d.tr});
+ S.d=S.d.filter(function(d){return !d.tr});
+ if(tn){
   XLSX.utils.sheet_to_json(wb.Sheets[tn],{header:1}).forEach(function(r){var ds=r.filter(function(c){return typeof c=="string"&&/^RENDIMENTO/i.test(c.trim())})[0];if(!ds)return;
    var dn=r.filter(function(c){return typeof c=="number"&&c>40000&&c<60000})[0],vn=r.filter(function(c){return typeof c=="number"&&c<40000}),v=vn[vn.length-1];if(!dn||!v)return;
    S.d.push({t:tkm(ds,P),v:v,dt:new Date(Math.round((dn-25569)*864e5)).toISOString().slice(0,10),tr:1});k2++})}
