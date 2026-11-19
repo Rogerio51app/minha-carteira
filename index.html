@@ -80,7 +80,7 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <div class="card" style="margin-top:12px"><h2>Meus ativos</h2><div id="la"></div><h2 style="margin-top:16px" id="ta">Adicionar ativo</h2><div id="fa"></div></div>
 <div class="card"><h2>Proventos (dividendos)</h2><div id="ld"></div><div class="g"><div><label>Ativo</label><input id="dt" placeholder="MXRF11"></div><div><label>Valor total (R$)</label><input id="dv" inputmode="decimal"></div></div><label>Data de pagamento</label><input id="dd" type="date"><button style="width:100%;margin-top:10px" onclick="addD()">Salvar provento</button></div>
 <div class="card"><h2>Sincronizar notebook e celular</h2><p class="mu">Mantém os dois aparelhos iguais, sozinho. Preencha uma vez em cada aparelho.</p><label>Repositório privado (usuario/nome)</label><input id="syr" placeholder="usuario/repositorio"><label>Token do GitHub</label><input id="syt" type="password"><button style="width:100%;margin-top:10px" onclick="sy()">Salvar e sincronizar</button><button class="s" style="width:100%;margin-top:8px" onclick="tst()">Testar conexão (diagnóstico)</button><button class="s" style="width:100%;margin-top:8px" onclick="est()">Ver estado dos dados</button><p id="sy" class="mu"></p></div>
-<div class="card"><h2>Backup e troca de aparelho</h2><p class="mu">Seus dados ficam só neste aparelho. Para levar ao outro, copie o código abaixo e cole no outro, em “Restaurar”.</p>
+<div class="card"><h2>Backup e troca de aparelho</h2><p class="mu">Alternativa manual, caso a sincronização falhe: para levar os dados ao outro aparelho, copie o código abaixo e cole no outro, em “Restaurar”.</p>
 <button class="s" style="width:100%" onclick="bk()">Gerar código de backup</button><textarea id="bx" rows="3" style="margin-top:8px"></textarea><button class="s" style="width:100%;margin-top:8px" onclick="rs()">Restaurar a partir do código</button></div></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -101,8 +101,9 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);sav();return push()}
  else{S.d=mg(S,R);sav();if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="18/11-c";
-function est(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
+var VER="19/11-a";
+function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
+function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
 function tst(){var o=[],tk=$("syt").value.trim(),rp=$("syr").value.trim(),hd={Authorization:"Bearer "+tk},
  st=function(n,u,x,f){return fetch(u,{headers:x||{}}).then(function(r){o.push(n+": HTTP "+r.status);return f&&r.ok?r.json().then(f):0}).catch(function(e){o.push(n+": FALHOU ("+(e&&e.message)+")")})};
@@ -116,6 +117,7 @@ function tst(){var o=[],tk=$("syt").value.trim(),rp=$("syr").value.trim(),hd={Au
  .then(function(){$("sy").innerHTML=o.join("<br>")})}
 function sy(){CF={tk:$("syt").value.trim(),rp:$("syr").value.trim()};if(!/^[\w.-]+\/[\w.-]+$/.test(CF.rp)){syst("Preencha o repositório no formato usuario/nome, por exemplo: Rogerio51app/carteira-dados");return}if(CF.tk.length<20){syst("Cole o token do GitHub no campo Token.");return}try{localStorage.setItem("mcsync",JSON.stringify(CF))}catch(e){}syst("Conectando...");pull()}
 document.addEventListener("visibilitychange",function(){if(!document.hidden)pull()});
+setInterval(function(){if(!document.hidden)pull()},60000);
 var $=function(i){return document.getElementById(i)};
 function n(v){v=String(v==null?"":v).replace(",",".");return v===""||isNaN(v)?null:parseFloat(v)}
 function R(v){return (v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
