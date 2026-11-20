@@ -71,7 +71,7 @@ label{display:block;font-size:.85rem;color:var(--mu);margin-top:8px}
 <p>Mínimo de 8 ativos. Nenhum tipo (FII ou Agro) acima de 50% do patrimônio. Nunca indicar venda de ativo abaixo do seu preço médio.</p>
 <h2 style="margin-top:14px">Como cada botão usa isso</h2>
 <p><b>Buy and Hold:</b> dá a nota da carteira (média ponderada pelos pesos) e aponta o que precisa de atenção: notas baixas, pesos fora da faixa, tipo concentrado, poucos ativos.</p>
-<p><b>Reinvestir meus dividendos:</b> entre os seus ativos, escolhe 3 com nota alta, peso abaixo da média e P/VP sem ágio, e evita o tipo que já pesa mais de 50%.</p>
+<p><b>Reinvestir meus dividendos:</b> escolhe até 3 ativos seus que <b>não tenham nenhum aviso de atenção</b> (nota baixa, peso acima da meta, proventos ou patrimônio em queda), sem ágio e fora do tipo que já pesa mais de 50%. Se não houver 3 nessas condições, completa com ativos novos da lista de Oportunidades e explica o motivo de cada um. Ativo com aviso de atenção nunca é indicado para compra.</p>
 <p><b>Oportunidades:</b> varre os fundos da B3 com cota de R$ 5 a R$ 13, liquidez a partir de R$ 500 mil e P/VP até 1,15. Só indica os de nota igual ou maior que a média da sua carteira e dá preferência ao tipo que está faltando.</p>
 <p class="mu">Os números vêm de dados oficiais (CVM e B3), atualizados pelo robô. Isto é uma ferramenta de apoio e não uma recomendação de investimento.</p></div></div>
 <div id="rl" class="v"><button class="s" onclick="go('home')">← Voltar</button><h2 style="margin-top:12px">📄 Relatórios que o app precisa</h2><div id="rlr"></div></div>
@@ -101,7 +101,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);sav();return push()}
  else{S.d=mg(S,R);sav();if(cnt(S.d)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="19/11-f";
+var VER="19/11-g";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -142,26 +142,51 @@ function tg(s){return '<span class="t '+(s>=75?"ok":s>=60?"wa":"ba")+'">'+s+'</s
 function pesos(){var T=0;S.a.forEach(function(x){T+=x.q*pr(x)});return S.a.map(function(x){return T?x.q*pr(x)/T*100:0})}
 function bh(){dyp();
  if(!S.a.length){$("bhr").innerHTML='<p class="mu">Cadastre seus ativos primeiro em “Meus ativos”.</p>';return}
- var w=pesos(),tot=0,al=[],med=0,pb=pband(S.a.length);
- S.a.forEach(function(x,i){var r=sc(x);med+=r.s*w[i]/100;if(r.s<60)al.push(x.t+": qualidade baixa");if(w[i]>pb.hi)al.push(x.t+": concentração de "+w[i].toFixed(1)+"% da carteira (meta até "+pb.hi.toFixed(1)+"%)");if(w[i]<pb.lo)al.push(x.t+": posição pequena, "+w[i].toFixed(1)+"% (meta a partir de "+pb.lo.toFixed(1)+"%)");r.n.forEach(function(t){if(r.s<75)al.push(x.t+": "+t)})});
+ var w=pesos(),tot=0,al=[],med=0,pb=pband(S.a.length),lw=[];
+ S.a.forEach(function(x,i){var r=sc(x);med+=r.s*w[i]/100;if(r.s<60)al.push(x.t+": qualidade baixa");if(w[i]>pb.hi)al.push(x.t+": concentração de "+w[i].toFixed(1)+"% da carteira (meta até "+pb.hi.toFixed(1)+"%)");if(w[i]<pb.lo)lw.push(x.t+": "+w[i].toFixed(1)+"% (meta a partir de "+pb.lo.toFixed(1)+"%)");r.n.forEach(function(t){if(r.s<75)al.push(x.t+": "+t)})});
  med=Math.round(med);var mx=Math.max.apply(null,w),div=S.a.length<8;
  var wt={};S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});Object.keys(wt).forEach(function(k){if(wt[k]>50)al.push(k+": "+wt[k].toFixed(0)+"% da carteira (sugerido at\u00e9 50%)")});var tpx=Object.keys(wt).some(function(k){return wt[k]>50}),ok=med>=75&&mx<=pb.hi&&!div&&!tpx,md=med>=60;
  var h='<div class="vd '+(ok?"ok":md?"wa":"ba")+'" style="color:#fff">'+(ok?"✅ Sua carteira tem qualidade":md?"⚠️ Boa, mas com pontos de atenção":"❌ Precisa de ajustes na composição")+' (nota '+med+'/100)</div>';
  if(div)h+='<p class="mu">Poucos ativos ('+S.a.length+'): busque diversificar (8 ou mais).</p>';
  S.a.forEach(function(x,i){var r=sc(x);h+='<div class="r"><div><b>'+x.t+'</b> <small class="mu">'+x.tp+' · '+w[i].toFixed(1)+'%'+(x.pm&&pr(x)?' \u00b7 '+((pr(x)/x.pm-1)*100).toFixed(1)+'% sobre o PM':'')+(dyv(x)!=null?' \u00b7 DY '+dyv(x).toFixed(1)+'%'+(x.dy2!=null?'*':''):'')+'</small><div class="bar"><i style="width:'+r.s+'%"></i></div></div>'+tg(r.s)+'</div>'});
  if(al.length)h+='<h2 style="margin-top:14px">Pontos de atenção</h2>'+al.slice(0,12).map(function(a){return '<div class="r">• '+a+'</div>'}).join("");
+ if(lw.length)h+='<h2 style="margin-top:14px">Abaixo da meta de peso</h2>'+lw.map(function(a){return '<div class="r">• '+a+'</div>'}).join("")+'<p class="mu">Não são avisos: mostram onde faz sentido aportar, desde que o ativo não esteja em Atenção.</p>';
  h+='<p class="mu">* DY calculado pelos seus recebimentos (o dado da CVM estava ausente ou muito abaixo).</p><p class="mu">Nota = P/VP (30) + DY 12m (30) + vacância (20) + liquidez (20). Critérios iniciais, ajustáveis.</p>';
  $("bhr").innerHTML=h;ate(w);fresh()}
+function atn(x,w,pb){var r=[],s=sc(x).s,g=sinais(x);
+ if(s<60)r.push("nota baixa ("+s+")");
+ if(w>pb.hi)r.push("peso acima da meta ("+w.toFixed(1).replace(".",",")+"%, meta até "+pb.hi.toFixed(1).replace(".",",")+"%)");
+ if(g.r=="nok")r.push("proventos por cota em queda ("+Math.abs(g.tr).toFixed(0)+"% em 3 meses)");
+ if(g.v=="nok")r.push("valor patrimonial da cota em queda ("+Math.abs(g.vp).toFixed(1).replace(".",",")+"% em 6 meses)");
+ return r}
+function rank(){dyp();var w=pesos(),wt={},md=0;S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i];md+=sc(x).s*w[i]/100});
+ return S.c.filter(function(x){var g=sinais(x);return g.r!="nok"&&g.v!="nok"&&(!S.a.length||sc(x).s>=md)}).map(function(x){var s=sc(x).s,v=wt[x.tp]||0,aj=v>50?-12:(v<35?6:0);return{x:x,i:S.c.indexOf(x),s:s,r:s+aj,aj:aj,v:v}}).sort(function(a,b){return b.r-a.r})}
+function motN(o){var x=o.x,g=sinais(x),c1=function(z){return z.toFixed(1).replace(".",",")},m=["nota "+o.s+", acima da média da sua carteira"];
+ if(o.aj>0)m.push(x.tp+" pesa só "+c1(o.v)+"% da sua carteira, então ajuda a equilibrar");
+ if(x.pvp!=null)m.push("P/VP "+x.pvp.toFixed(2).replace(".",",")+(x.pvp<=1?" (abaixo do valor patrimonial)":""));
+ if(x.dy!=null)m.push("DY 12m "+c1(x.dy)+"%");
+ if(x.liq!=null)m.push("liquidez R$ "+(x.liq>=1000?c1(x.liq/1000)+" M":x.liq+" mil")+" por dia");
+ m.push(g.r=="ok"&&g.v=="ok"?"sem sinal de queda nos proventos nem no patrimônio":"sinais de renda e patrimônio sem dados suficientes");return m}
 function reinv(){dyp();
  var v=n($("vl").value);if(!v||!S.a.length){$("rer").innerHTML='<p class="mu">Informe um valor e tenha ativos cadastrados.</p>';return}
- var w=pesos(),ig=100/S.a.length,wt={},pb2=pband(S.a.length);S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});
- var L=S.a.map(function(x,i){var s=sc(x).s,r=s+(w[i]<ig?10:0)-(w[i]>pb2.hi?20:0)-(x.pvp>1.1?15:0)-(wt[x.tp]>50?15:0);return{x:x,s:s,r:r,w:w[i]}}).sort(function(a,b){return b.r-a.r}).slice(0,3);
- var p=v/L.length,h='<p class="mu">Divisão sugerida entre os '+L.length+' melhores:</p>',sob=0;
- L.forEach(function(o,i){var pc=pr(o.x),q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;h+='<div class="r"><div><b>'+(i+1)+'º '+o.x.t+'</b><br><small class="mu">Nota '+o.s+' · peso atual '+o.w.toFixed(1)+'%</small></div><div style="text-align:right"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'});
- h+='<p class="mu">Sobra estimada: '+R(sob)+'. Prioriza nota alta, peso abaixo da média, sem passar de 15% e sem ágio alto.</p>';$("rer").innerHTML=h}
+ var w=pesos(),pb=pband(S.a.length),wt={},ig=100/S.a.length,c1=function(z){return z.toFixed(1).replace(".",",")},E=[],L=[],h="";
+ S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i]});
+ S.a.forEach(function(x,i){var s=sc(x).s,m=atn(x,w[i],pb);
+  if(!m.length){if(wt[x.tp]>50)m.push(x.tp+" já pesa "+c1(wt[x.tp])+"% da carteira (limite 50%)");if(x.pvp>1.1)m.push("P/VP "+x.pvp.toFixed(2).replace(".",",")+" acima de 1,10 (ágio)");if(s<70)m.push("nota "+s+" abaixo de 70")}
+  if(m.length)E.push({x:x,m:m});else L.push({x:x,s:s,w:w[i],r:s+(w[i]<ig?10:0)+(w[i]<pb.lo?5:0)})});
+ L.sort(function(a,b){return b.r-a.r});L=L.slice(0,3);
+ var N=L.length<3?rank().filter(function(o){return !S.a.some(function(a){return a.t==o.x.t})}).slice(0,3-L.length):[],tot=L.length+N.length;
+ if(!tot)h='<p><b>Nenhum ativo em condições de receber aporte agora.</b> Todos os seus ativos têm algum aviso, e não achei fundo novo que passe nos critérios (cota de R$ 5 a R$ 13, nota acima da média da sua carteira e sem queda de proventos ou patrimônio). Atualize o robô de mercado e o extrato e tente de novo.</p>';
+ else{var p=v/tot,sob=0,k=0;
+  h='<p class="mu">'+(L.length?L.length+" da sua carteira":"Nenhum ativo da sua carteira está em condições")+(N.length?(L.length?" e ":", então indico ")+N.length+" ativo(s) novo(s)":"")+". Valor dividido em "+tot+" parte(s):</p>";
+  var lin=function(t,cp,pc,mot,nv){var q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;k++;return '<div class="r" style="align-items:flex-start"><div><b>'+k+'º '+t+'</b> '+(nv?'<span class="t ok">ativo novo</span>':'')+'<br><small class="mu">'+cp+' · '+R(pc)+'</small><br><small class="mu">'+mot+'</small></div><div style="text-align:right;white-space:nowrap"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'};
+  L.forEach(function(o){var x=o.x,d=dyv(x);h+=lin(x.t,x.tp,pr(x),"nota "+o.s+" · peso "+c1(o.w)+"% (meta "+c1(pb.lo)+"–"+c1(pb.hi)+"%)"+(x.pvp!=null?" · P/VP "+x.pvp.toFixed(2).replace(".",","):"")+(d!=null?" · DY "+c1(d)+"%":"")+" · sem avisos de atenção",0)});
+  N.forEach(function(o){h+=lin(o.x.t,o.x.tp,o.x.price,motN(o).join(" · "),1)});
+  h+='<p class="mu">Sobra estimada: '+R(sob)+'. Só entram ativos sem aviso de atenção, sem ágio e fora do tipo que já pesa mais de 50%. Antes de comprar um ativo novo, confira o relatório gerencial dele.</p>'}
+ if(E.length)h+='<h2 style="margin-top:14px">Não indicados agora</h2>'+E.map(function(e){return '<div class="r" style="align-items:flex-start"><div><b>'+e.x.t+'</b><br><small class="mu">'+e.m.join("; ")+"</small></div></div>"}).join("");
+ $("rer").innerHTML=h}
 function op(){
- dyp();var w=pesos(),wt={},md=0;S.a.forEach(function(x,i){wt[x.tp]=(wt[x.tp]||0)+w[i];md+=sc(x).s*w[i]/100});
- var L=S.c.filter(function(x){return !S.a.length||sc(x).s>=md}).map(function(x){var s=sc(x).s,v=wt[x.tp]||0,aj=v>50?-12:(v<35?6:0);return{x:x,i:S.c.indexOf(x),s:s,r:s+aj,aj:aj}}).sort(function(a,b){return b.r-a.r});
+ var L=rank();
  $("opr").innerHTML=L.length?L.map(function(o,k){var own=S.a.some(function(a){return a.t===o.x.t});return '<div class="r"><div><b>'+(k+1)+'º '+o.x.t+'</b> '+(own?'<small class="mu">(já na carteira)</small>':'')+'<br><small class="mu">'+o.x.tp+' \u00b7 '+R(o.x.price)+(o.aj>0?' \u00b7 ajuda a equilibrar':o.aj<0?' \u00b7 '+o.x.tp+' j\u00e1 pesa mais de 50%':'')+(sc(o.x).n.length?' \u00b7 '+sc(o.x).n.join(" \u00b7 "):'')+'</small></div><div>'+tg(o.s)+'<button class="d" onclick="S.c.splice('+o.i+',1);sv();op()">✕</button></div></div>'}).join("")+(L.length>=3?"":'<p class="mu">Adicione ao menos 3 fundos para ter o ranking.</p>'):'<p class="mu">Nenhum fundo passou nos filtros (cota entre R$ 5 e R$ 13, liquidez e nota igual ou acima da m\u00e9dia da sua carteira). '+(S.cd?'Base: '+S.cd.n+' fundos; com liquidez ok: '+S.cd.l+'; com DY: '+S.cd.d+'.':'Dados de mercado não carregados (confira data/mercado.json e recarregue com Ctrl+F5).')+'</p>';
  $("cf").innerHTML=form("c");S.f.opp=L.length&&L[0].s>=75?1:0;sv();fresh()}
 function form(m,x){x=x||{};var sel=function(i,l,v){return '<div><label>'+l+'</label><select id="'+m+i+'"><option value="">—</option><option value="ok"'+(v=="ok"?" selected":"")+'>OK</option><option value="nok"'+(v=="nok"?" selected":"")+'>NÃO OK</option></select></div>'};var f=function(i,l,v){return '<div><label>'+l+'</label><input id="'+m+i+'" value="'+(v==null?"":v)+'" inputmode="decimal"></div>'};
@@ -296,7 +321,7 @@ var M={};
 function aplica(){rmap();var F=M.fundos||{};if(!Object.keys(F).length)return;var ks=Object.keys(F);S.cd={n:ks.length,l:ks.filter(function(t){return F[t].liq>=500}).length,d:ks.filter(function(t){return F[t].dy!=null}).length};
  S.a.forEach(function(a){var m=F[a.t];if(m){if(m.preco)a.price=m.preco;a.pvp=m.pvp;if(m.dy!=null&&!a.dyM)a.dy=m.dy;if(m.liq!=null)a.liq=m.liq;if(m.var12!=null)a.var12=m.var12;a.vp6=m.vp6;a.rtd=m.rtd;a.cnpj=m.cnpj}});
  var own={};S.a.forEach(function(a){own[a.t]=1});
- S.c=Object.keys(F).filter(function(t){var m=F[t];return !own[t]&&m.preco>=5&&m.preco<=13&&m.liq>=500&&m.pvp<=1.15&&(m.dy==null||m.dy>=6)}).map(function(t){var m=F[t];return{t:t,tp:m.tp||"FII",price:m.preco,pvp:m.pvp,dy:m.dy,vac:null,liq:m.liq}}).sort(function(a,b){return sc(b).s-sc(a).s}).slice(0,10);sv()}
+ S.c=Object.keys(F).filter(function(t){var m=F[t];return !own[t]&&m.preco>=5&&m.preco<=13&&m.liq>=500&&m.pvp<=1.15&&(m.dy==null||m.dy>=6)}).map(function(t){var m=F[t];return{t:t,tp:m.tp||"FII",price:m.preco,pvp:m.pvp,dy:m.dy,vac:null,liq:m.liq,rtd:m.rtd,vp6:m.vp6,var12:m.var12,cnpj:m.cnpj}}).sort(function(a,b){return sc(b).s-sc(a).s}).slice(0,10);sv()}
 try{fetch("data/mercado.json?"+Date.now()).then(function(r){return r.json()}).then(function(j){M=j;aplica();home();if(j.atualizado){var p=document.createElement("p");p.className="mu";p.textContent="Indicadores de mercado atualizados em "+j.atualizado.split("-").reverse().join("/");$("al").after(p)}}).catch(function(){})}catch(e){}
 home();pull();
 </script></body></html>
