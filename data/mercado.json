@@ -1,5 +1,5 @@
 {
- "atualizado": "2026-11-22",
+ "atualizado": "2026-11-23",
  "status": {
   "b3_arquivos": "1 ok (ex.: A2026)",
   "b3": "ok: 723 codigos",
@@ -164,7 +164,7 @@
    "cnpjs": 327,
    "com_ticker": 205
   },
-  "p12": "M112025 ok: 560 fundos",
+  "p12": "M112025 ok: 555 fundos",
   "dy_escala": 100,
   "dy_mes_mediana": 0.007817,
   "diag": {
@@ -3299,7 +3299,7 @@
    "dy": null,
    "liq": 65,
    "ref": "2026-10-01",
-   "var12": 12.0,
+   "var12": null,
    "vp6": -1.0,
    "rtd": null,
    "cnpj": "45188033000145"
@@ -4055,7 +4055,7 @@
    "dy": 6.1,
    "liq": 38,
    "ref": "2026-10-01",
-   "var12": 1.0,
+   "var12": null,
    "vp6": -4.3,
    "rtd": 12.3,
    "cnpj": "59090726000105"
