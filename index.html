@@ -97,7 +97,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);S.ops=mgl(L0.ops,R.ops,kop);S.inv=mgl(L0.inv,R.inv,kiv);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();return push()}
  else{S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="22/11-d";
+var VER="22/11-e";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -389,7 +389,7 @@ function alertas(){fresh();var c=[];
  if(S.f.ate.length)c.push('<button class="s" style="color:var(--ba)" onclick="go(\'at\')">⚠️ Atenção ('+S.f.ate.length+")</button>");
  if(S.f.opp)c.push('<button class="s" onclick="go(\'op\')">⭐ Oportunidade</button>');
  if(rvOn())c.push('<button class="s" onclick="go(\'re\')">💰 Reinvestir</button>');
- if(S.f.rel)c.push('<button class="s" onclick="go(\'rl\')">📄 Relatórios</button>');
+ c.push('<button class="s"'+(S.f.rel?' style="color:var(--wa)"':'')+' onclick="go(\'rl\')">📄 Relatórios'+(S.f.rel?' (atualizar)':'')+'</button>');
  var h=c.length?'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px">'+c.join("")+"</div>":"";
  relAtivos().forEach(function(o){h+='<div class="vd wa" style="color:#fff;font-weight:600;cursor:pointer" onclick="go(\'at\')">'+o.m+"</div>"});
  $("al").innerHTML=h}
