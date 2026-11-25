@@ -97,7 +97,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);S.ops=mgl(L0.ops,R.ops,kop);S.inv=mgl(L0.inv,R.inv,kiv);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();return push()}
  else{S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="22/11-e";
+var VER="22/11-h";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -192,14 +192,14 @@ function reinv(){dyp();
   if(!m.length){if(wt[x.tp]>50)m.push(x.tp+" já pesa "+c1(wt[x.tp])+"% da carteira (limite 50%)");if(x.pvp>1.1)m.push("P/VP "+x.pvp.toFixed(2).replace(".",",")+" acima de 1,10 (ágio)");if(s<70)m.push("nota "+s+" abaixo de 70");if(x.pvp!=null&&x.pvp<ID.pvp[0])m.push("P/VP "+x.pvp.toFixed(2).replace(".",",")+" abaixo de 0,80: o mercado está desconfiando");var dd2=dyv(x);if(dd2!=null&&dd2>ID.dy[1])m.push("DY "+c1(dd2)+"% acima de 20%: possível prêmio de risco")}
   if(m.length)E.push({x:x,m:m});else L.push({x:x,s:s,w:w[i],r:s+(w[i]<ig?10:0)+(w[i]<pb.lo?5:0)})});
  L.sort(function(a,b){return b.r-a.r});L=L.slice(0,3);
- var N=L.length<3?rank().filter(function(o){return !S.a.some(function(a){return a.t==o.x.t})}).slice(0,3-L.length):[],tot=L.length+N.length;
- if(!tot)h='<p><b>Nenhum ativo em condições de receber aporte agora.</b> Todos os seus ativos têm algum aviso, e não achei fundo novo que passe nos critérios (cota de R$ 5 a R$ 13, nota acima da média da sua carteira e sem queda de proventos ou patrimônio). Atualize o robô de mercado e o extrato e tente de novo.</p>';
+ var N=[],tot=L.length+N.length;
+ if(!tot)h='<p><b>Nenhum ativo em condições de receber aporte agora.</b> Todos os seus ativos têm algum aviso de atenção ou estão fora dos critérios abaixo. Atualize o robô de mercado e o extrato e tente de novo. Ativos novos aparecem na tela de Oportunidade.</p>';
  else{var p=v/tot,sob=0,k=0;
   h='<p class="mu">'+(L.length?L.length+" da sua carteira":"Nenhum ativo da sua carteira está em condições")+(N.length?(L.length?" e ":", então indico ")+N.length+" ativo(s) novo(s)":"")+". Valor dividido em "+tot+" parte(s):</p>";
-  var lin=function(t,cp,pc,mot,nv){var q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;k++;return '<div class="r" style="align-items:flex-start"><div><b>'+k+'º '+t+'</b> '+(nv?'<span class="t ok">ativo novo</span>':'')+'<br><small class="mu">'+cp+' · '+R(pc)+'</small><br><small class="mu">'+mot+'</small></div><div style="text-align:right;white-space:nowrap"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'};
-  L.forEach(function(o){var x=o.x,d=dyv(x);h+=lin(x.t,x.tp,pr(x),"nota "+o.s+" · peso "+c1(o.w)+"% (meta "+c1(pb.lo)+"–"+c1(pb.hi)+"%)"+(x.pvp!=null?" · P/VP "+x.pvp.toFixed(2).replace(".",","):"")+(d!=null?" · DY "+c1(d)+"%":"")+" · sem avisos de atenção",0)});
+  var lin=function(t,cp,pc,mot,nv,pm){var dp=pm>0&&pc?(pc/pm-1)*100:null,pmt=pm>0?' · PM '+R(pm)+(dp!=null?' ('+(Math.abs(dp)<.05?'cota igual ao PM':'cota '+c1(Math.abs(dp))+'% '+(dp<0?'abaixo':'acima')+' do PM')+')':''):'';var q=pc?Math.floor(p/pc):0;sob+=pc?p-q*pc:p;k++;return '<div class="r" style="align-items:flex-start"><div><b>'+k+'º '+t+'</b> '+(nv?'<span class="t ok">ativo novo</span>':'')+'<br><small class="mu">'+cp+' · '+R(pc)+pmt+'</small><br><small class="mu">'+mot+'</small></div><div style="text-align:right;white-space:nowrap"><b>'+q+' cotas</b><br><small class="mu">'+R(q*pc)+'</small></div></div>'};
+  L.forEach(function(o){var x=o.x,d=dyv(x);h+=lin(x.t,x.tp,pr(x),"nota "+o.s+" · peso "+c1(o.w)+"% (meta "+c1(pb.lo)+"–"+c1(pb.hi)+"%)"+(x.pvp!=null?" · P/VP "+x.pvp.toFixed(2).replace(".",","):"")+(d!=null?" · DY "+c1(d)+"%":"")+" · sem avisos de atenção",0,x.pm)});
   N.forEach(function(o){h+=lin(o.x.t,o.x.tp,o.x.price,motN(o).join(" · "),1)});
-  h+='<p class="mu">Sobra estimada: '+R(sob)+'. Só entram ativos sem aviso de atenção, sem ágio, com P/VP a partir de 0,80, DY até 20% e fora do tipo que já pesa mais de 50%. Antes de comprar um ativo novo, confira o relatório gerencial dele.</p>'}
+  h+='<p class="mu">Sobra estimada: '+R(sob)+'. Só entram ativos sem aviso de atenção, sem ágio, com P/VP a partir de 0,80, DY até 20% e fora do tipo que já pesa mais de 50%.</p>'}
  if(E.length)h+='<h2 style="margin-top:14px">Não indicados agora</h2>'+E.map(function(e){return '<div class="r" style="align-items:flex-start"><div><b>'+e.x.t+'</b><br><small class="mu">'+e.m.join("; ")+"</small></div></div>"}).join("");
  $("rer").innerHTML=h}
 function op(){
@@ -381,7 +381,18 @@ function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{
   XLSX.utils.sheet_to_json(wb.Sheets[tn],{header:1}).forEach(function(r){var ds=r.filter(function(c){return typeof c=="string"&&/^RENDIMENTO/i.test(c.trim())})[0];if(!ds)return;
    var dn=r.filter(function(c){return typeof c=="number"&&c>40000&&c<60000})[0],vn=r.filter(function(c){return typeof c=="number"&&c<40000}),v=vn[vn.length-1];if(!dn||!v)return;
    S.d.push({t:tkm(ds,P),v:v,dt:new Date(Math.round((dn-25569)*864e5)).toISOString().slice(0,10),tr:1});k2++})}
- S.imp.p=iso(new Date());sv();fRl();$("fm").textContent="BTG importado: "+P.length+" ativos, "+k+" rendimentos novos, "+k2+" pagamento(s) a receber, "+k3+" compra(s)/venda(s) nova(s)"+(rem?", "+rem+" ativo(s) removido(s) por não estarem mais na posição":"")+"."}
+ var k4=ccRend(wb);k+=k4;
+ S.imp.p=iso(new Date());sv();fRl();$("fm").textContent="BTG importado: "+P.length+" ativos, "+k+" rendimentos novos"+(k4?" ("+k4+" da conta corrente)":"")+", "+k2+" pagamento(s) a receber, "+k3+" compra(s)/venda(s) nova(s)"+(rem?", "+rem+" ativo(s) removido(s) por não estarem mais na posição":"")+"."}
+function ccRend(wb){var hj=hoje(),n=0,dd=function(c){if(typeof c=="number"&&c>40000&&c<60000)return new Date(Math.round((c-25569)*864e5)).toISOString().slice(0,10);var m=typeof c=="string"&&c.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);return m?m[3]+"-"+m[2]+"-"+m[1]:null};
+ wb.SheetNames.forEach(function(sn){if(/Tr.nsito/i.test(sn)||sn=="Renda Variavel")return;
+  XLSX.utils.sheet_to_json(wb.Sheets[sn],{header:1}).forEach(function(r){var di=-1;r.forEach(function(c,i){if(di<0&&typeof c=="string"&&/^\s*RENDIMENTOS?\s*-/i.test(c))di=i});if(di<0)return;
+   var m=String(r[di]).trim().match(/([A-Z]{4}\d{2})\s*$/);if(!m)return;var t=m[1];if(!S.a.some(function(a){return a.t==t}))return;
+   var dt=null;for(var i=0;i<di&&!dt;i++)dt=dd(r[i]);if(!dt||dt>hj)return;
+   var v=0;for(var j=di+1;j<r.length&&!v;j++){if(r[j]!=null&&r[j]!=="")v=num(r[j])}if(!(v>0))return;
+   var ex=S.d.filter(function(x){return x.t==t&&x.dt==dt&&Math.abs(x.v-v)<.01})[0];
+   if(ex){if(ex.tr){delete ex.tr;n++}return}
+   var q=qEst(t);S.d.push({t:t,v:v,dt:dt,pc:q>0?v/q:null});n++})});
+ return n}
 function rvPaid(){var hj=hoje(),lim=S.rv&&S.rv.d?S.rv.d:addD(hj,-30),s=0;S.d.forEach(function(d){if(!d.tr&&d.dt<=hj&&d.dt>lim)s+=d.v});return s}
 function rvOn(){return rvPaid()>0||!!(S.rv&&S.rv.d==hoje())}
 function fRe(){var v=rvPaid(),p=$("rvh");if(p)p.innerHTML=v>0?"Dividendos recebidos desde a última análise"+(S.rv?" ("+fd(S.rv.d)+")":" (últimos 30 dias)")+": <b>"+R(v)+'</b> · <a style="color:var(--pr);text-decoration:underline;cursor:pointer" onclick="$(\'vl\').value=\''+v.toFixed(2).replace(".",",")+'\'">usar este valor</a>':"Nenhum dividendo novo desde a última análise."}
