@@ -97,7 +97,7 @@ function pull(){if(!CF.tk||!CF.rp)return Promise.resolve();return gh("GET").then
  if((R.upd||"")>(S.upd||"")){S=R;S.d=mg(L0,R);S.ops=mgl(L0.ops,R.ops,kop);S.inv=mgl(L0.inv,R.inv,kiv);lj=sj();sav();if(M.fundos)aplica();home();syst("Dados atualizados a partir do outro aparelho.");if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}}
  else if((R.upd||"")<(S.upd||"")){S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();return push()}
  else{S.d=mg(S,R);S.ops=mgl(S.ops,R.ops,kop);S.inv=mgl(S.inv,R.inv,kiv);sav();if(sig(S)!=rc){S.upd=new Date().toISOString();sav();return push()}syst("Sincronizado.")}})}).catch(function(e){syst("Falha ao sincronizar: "+(e&&e.name?e.name+" - ":"")+(e&&e.message?e.message:e))})}
-var VER="22/11-j";
+var VER="22/11-k";
 function est(){$("sy").textContent="Sincronizando...";pull().then(est2)}
 function est2(){var L=function(o,n){var d=o.d||[];return "<b>"+n+"</b>: vers\u00e3o "+VER+" \u00b7 ativos "+(o.a||[]).length+" \u00b7 proventos "+d.length+" (com valor por cota: "+d.filter(function(e){return e.pc!=null}).length+") \u00b7 a receber: "+d.filter(function(e){return e.tr}).length+" \u00b7 extrato importado em "+((o.imp&&o.imp.p)||"nunca")+" \u00b7 alterado em "+(o.upd||"\u2014")},t=L(S,"Este aparelho");$("sy").innerHTML=t;
  if(!CF.tk||!CF.rp)return;gh("GET").then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(g){var R=JSON.parse(decodeURIComponent(escape(atob(g.content.replace(/\n/g,"")))));$("sy").innerHTML=t+"<br><br>"+L(R,"Nuvem")}).catch(function(e){$("sy").innerHTML=t+"<br><br>Nuvem: "+e.message})}
@@ -380,7 +380,7 @@ function btg(wb){var rows=XLSX.utils.sheet_to_json(wb.Sheets["Renda Variavel"],{
   else if(mode==2&&(cl[c.x]=="COMPRA"||cl[c.x]=="VENDA")){var dd3=new Date(Math.round((r[c.d]-25569)*864e5)).toISOString().slice(0,10),t3=(cl[c.t]||"").replace("*","");if(t3&&num(r[c.q])>0)k3+=addOp({d:dd3,k:cl[c.x],t:t3,q:num(r[c.q]),p:num(r[c.pr]),v:num(r[c.v]),s:"btg"})}
   else if(mode==2&&cl[c.x]=="RENDIMENTO"){var dt=new Date(Math.round((r[c.d]-25569)*864e5)).toISOString().slice(0,10),t2=(cl[c.t]||"").replace("*",""),v=num(r[c.v]);var qd=num(r[c.q]),pc=qd>0?v/qd:null,ex=S.d.filter(function(x){return x.t==t2&&x.dt==dt&&Math.abs(x.v-v)<.01})[0];if(ex){if(ex.pc==null&&pc)ex.pc=pc;return}if(!v)return;S.d.push({t:t2,v:v,dt:dt,pc:pc});k++}});
  if(!P.length)throw 0;var old=S.a,rem=old.filter(function(a){return !P.some(function(p){return p.t==a.t})}).length;
- S.a=P.map(function(p){var o=old.filter(function(a){return a.t==p.t})[0]||{};return{t:p.t,tp:p.tp,q:p.q,pm:p.pm,price:p.price,pvp:o.pvp,dy:o.dy,vac:o.vac,liq:o.liq}});
+ S.a=P.map(function(p){var o=old.filter(function(a){return a.t==p.t})[0]||{};var n=Object.assign({},o);n.t=p.t;n.tp=p.tp;n.q=p.q;n.pm=p.pm;n.price=p.price;return n});if(typeof M!="undefined"&&M&&M.fundos)aplica();
  var tn=wb.SheetNames.filter(function(n){return /Tr.nsito/i.test(n)})[0],k2=0;
  S.d=S.d.filter(function(d){return !d.tr});
  if(tn){
